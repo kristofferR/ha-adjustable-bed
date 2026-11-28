@@ -61,6 +61,7 @@ from .const import (
     BED_TYPE_COMFORTBASE,
     BED_TYPE_COMFYDS,
     BED_TYPE_COOLBASE,
+    BED_TYPE_COSYWORLD,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -862,6 +863,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_RONCO_MOTION: "Ronco Motion app (ECONOMY / PREMIUM)",
     BED_TYPE_OCTO: "OCTO Smart Control",
+    BED_TYPE_COSYWORLD: "Cosyworld Smart Control",
     BED_TYPE_REVERIE: "Reverie app",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand app",
     BED_TYPE_REVERIE_PAIRLINK: "Reverie Pairlink (R510L / Harmoniq)",
@@ -1980,6 +1982,15 @@ def _detect_with_first_pass(
             result = DetectionResult("kingkoil", 0.3, [*result.signals, "name:kingkoil_app_candidate"])
         elif result.bed_type != "kingkoil":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "kingkoil"]))
+    from .profiles.cosyworld import scan_name as cosyworld_scan_name
+
+    if (first.service(BED_TYPE_COSYWORLD) and cosyworld_scan_name(platform_name or "")
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        # FFE0 and display names are shared. Offer the app, never infer a layout.
+        result.ambiguous_types = list(dict.fromkeys([
+            *(result.ambiguous_types or ()), BED_TYPE_COSYWORLD,
+        ]))
+        result.signals.append("service:cosyworld_app_candidate")
     if first.name(BED_TYPE_JUNASLEEP) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_JUNASLEEP, 0.3, [*result.signals, "name:junasleep_app_candidate"])

@@ -63,6 +63,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_COMFYDS,
+    BED_TYPE_COSYWORLD,
     BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_DREAMOTION_SMART,
@@ -309,6 +310,7 @@ from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
+from .profiles.cosyworld import PROFILE as COSYWORLD_PROFILE
 from .profiles.dreamsense import CHOICES as DREAMSENSE_CHOICES
 from .profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
 from .profiles.jerome_adjustable_base import PRODUCT_CHOICES as JEROME_ADJUSTABLE_BASE_PRODUCTS
@@ -368,6 +370,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     # OCTO motor layout comes from its advertised capability record, with an
     # OCTO-specific explicit override in the profile's own setup/options UI.
     BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
+    BED_TYPE_COSYWORLD: GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "casper_remote": GENERIC_FIELDS,
     "casper_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "casper_sleep_mm": GENERIC_FIELDS,
@@ -4448,6 +4451,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     },
     # Standard OCTO Smart Control's PIN, and an explicit motor layout over the
     # advertised one. A route without an app step asks these in its final settings.
+    BED_TYPE_COSYWORLD: _asking(
+        BED_TYPE_COSYWORLD,
+        questions=(Question(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN, text=True),),
+        owns={**_BASE[BED_TYPE_COSYWORLD].owns, CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: VARIANT_AUTO, CONF_MOTOR_PULSE_DELAY_MS: COSYWORLD_PROFILE.refresh_ms},
+        normalize=_octo_normalize,
+        validate=_octo_errors,
+        title=lambda _data: "Cosyworld Smart Control",
+    ),
     BED_TYPE_OCTO: _asking(
         BED_TYPE_OCTO,
         questions=(

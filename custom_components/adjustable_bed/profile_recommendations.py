@@ -33,6 +33,7 @@ from .const import (
     BED_TYPE_AMADA,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_COMFORT_ENHANCEMENT3,
+    BED_TYPE_COSYWORLD,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE_OKIN,
@@ -274,6 +275,11 @@ def recommend_profile(
     detected = detect_bed_type_detailed(info)
     if bed_type in _APP_HINTS and bed_type in (detected.ambiguous_types or ()):
         return None  # The user's explicit companion app resolves this shared identity.
+    if bed_type == detected.bed_type == BED_TYPE_OCTO:
+        # A shared receiver cannot question an explicitly selected OCTO app.
+        detected.ambiguous_types = [
+            choice for choice in detected.ambiguous_types or () if choice != BED_TYPE_COSYWORLD
+        ] or None
     detected.ambiguous_types = [
         choice for choice in detected.ambiguous_types or () if choice not in _APP_HINTS
     ] or None

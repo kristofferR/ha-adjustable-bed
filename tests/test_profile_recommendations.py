@@ -1053,6 +1053,19 @@ def test_legacy_alias_does_not_offer_the_same_controller_as_an_improvement():
     )
 
 
+@pytest.mark.parametrize("name", ("RC2", "CLI"))
+@pytest.mark.parametrize("current", ("richmat", "keeson"))
+def test_shared_octo_receiver_preserves_both_app_choices_for_other_profiles(name, current):
+    from custom_components.adjustable_bed.profiles.cosyworld import SERVICE
+
+    recommendation = recommend_profile(
+        {CONF_BED_TYPE: current}, advertisement(name, [SERVICE]), {}
+    )
+    assert recommendation is not None
+    assert recommendation.suggested is None
+    assert {"cosyworld", "octo"}.issubset(recommendation.choices)
+
+
 def test_generic_decision_survives_name_changes_but_not_changed_profile():
     from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
 

@@ -2648,19 +2648,20 @@ async def test_combine_repair_keeps_the_pairing_flows_translation_domain(
 
 
 @pytest.mark.parametrize("paired", [False, True])
-async def test_octo_pin_repair_saves_the_pin_it_asks_for(hass: HomeAssistant, paired: bool) -> None:
+@pytest.mark.parametrize("bed_type", ["octo", "cosyworld"])
+async def test_octo_pin_repair_saves_the_pin_it_asks_for(hass: HomeAssistant, paired: bool, bed_type: str) -> None:
     """A locked Octo receiver's repair takes the PIN and saves it where Configure does."""
     from custom_components.adjustable_bed.repairs import async_create_fix_flow
     from custom_components.adjustable_bed.unsupported import update_octo_pin_required_issue
 
     address = "AA:BB:CC:DD:EE:01"
-    side_data = {CONF_ADDRESS: address, "bed_type": "octo"}
+    side_data = {CONF_ADDRESS: address, "bed_type": bed_type}
     data: dict[str, Any] = (
         {
             "pair_id": "pair_test",
             "pair_children": [
                 {**side_data, "side": "left"},
-                {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", "bed_type": "octo", "side": "right"},
+                {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", "bed_type": bed_type, "side": "right"},
             ],
         }
         if paired

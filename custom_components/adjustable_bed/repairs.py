@@ -184,6 +184,7 @@ class OctoPinRepairFlow(RepairsFlow):
         )
 
         from .const import (
+            BED_TYPE_COSYWORLD,
             BED_TYPE_OCTO,
             CONF_BED_TYPE,
             CONF_OCTO_PIN,
@@ -211,9 +212,10 @@ class OctoPinRepairFlow(RepairsFlow):
         target = get_child(entry.data, side) if side is not None else entry.data
         if (
             target is None
-            or target.get(CONF_BED_TYPE) != BED_TYPE_OCTO
+            or target.get(CONF_BED_TYPE) not in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD}
             # Star2 receivers have no PIN.
-            or target.get(CONF_PROTOCOL_VARIANT) == OCTO_VARIANT_STAR2
+            or (target.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+                and target.get(CONF_PROTOCOL_VARIANT) == OCTO_VARIANT_STAR2)
             or target.get(CONF_OCTO_PIN)
         ):
             # Configure saved a PIN, or the bed changed, since the repair opened.

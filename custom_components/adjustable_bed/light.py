@@ -151,7 +151,7 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
     if controller.supports_light_color_control:
         return [AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)]
 
-    if octo is not None and octo.supports_discrete_light_control:
+    if octo is not None and octo.uses_legacy_light_switch and octo.supports_discrete_light_control:
         # Main exposed OCTO's on/off-only capability as a switch. Keep its
         # registry identity and automations stable across this upgrade.
         return []
@@ -788,6 +788,14 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self._state_generation = 0
         self._unregister_callback: Callable[[], None] | None = None
         self._unregister_connection: Callable[[], None] | None = None
+
+    @property
+    def available(self) -> bool:
+        controller = self._coordinator.capability_controller
+        octo = octo_controller(controller)
+        return super().available and (
+            octo is None or octo.supports_lights and octo.normal_controls_available
+        )
 
     @staticmethod
     def _level_is_on(level: object) -> bool | None:

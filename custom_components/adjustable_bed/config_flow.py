@@ -169,6 +169,7 @@ from .const import (
     BED_TYPE_COMFORT_BED,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFYDS,
+    BED_TYPE_COSYWORLD,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -1585,6 +1586,15 @@ def _default_motor_count(
     return DEFAULT_MOTOR_COUNT
 
 
+def _shared_receiver_choice(result: DetectionResult) -> bool:
+    alternatives = result.ambiguous_types or ()
+    return (
+        result.bed_type == BED_TYPE_SUTA and BED_TYPE_TRUEMOTION in alternatives
+        or result.bed_type == BED_TYPE_LINAK and BED_TYPE_VINDO in alternatives
+        or result.bed_type == BED_TYPE_OCTO and BED_TYPE_COSYWORLD in alternatives
+    )
+
+
 def _confident_auto_detect(result: DetectionResult) -> str | None:
     """Return the detected bed type only for a high-confidence, unambiguous match.
 
@@ -1594,6 +1604,7 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
     if (
         result.bed_type is not None
         and result.confidence >= _AUTO_DETECT_MIN_CONFIDENCE
+        and not _shared_receiver_choice(result)
         and not any(
             candidate not in _EXPLICIT_APP_HINTS for candidate in (result.ambiguous_types or ())
         )
@@ -3575,11 +3586,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         bed_type = detection_result.bed_type
         # The receiver can be known while its app remains ambiguous.
-        alternatives = detection_result.ambiguous_types or ()
-        shared_receiver_choice = (
-            bed_type == BED_TYPE_SUTA and BED_TYPE_TRUEMOTION in alternatives
-            or bed_type == BED_TYPE_LINAK and BED_TYPE_VINDO in alternatives
-        )
+        shared_receiver_choice = _shared_receiver_choice(detection_result)
         if bed_type is None or (detection_result.confidence >= 0.7 and not shared_receiver_choice):
             return False
 
@@ -3829,7 +3836,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         connect right) across resubmissions of the pair step instead of needing both
         connected at once — which the single-connection profile is designed to avoid.
         """
-        if entry.data.get(CONF_BED_TYPE) != BED_TYPE_OCTO:
+        if entry.data.get(CONF_BED_TYPE) not in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD}:
             return None
         coordinator = loaded_runtime(self.hass, entry.entry_id)
         snapshot_fn = getattr(getattr(coordinator, "controller", None), "capability_snapshot", None)
@@ -3847,7 +3854,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # fields available for offline setup, while OctoController treats them
         # as non-authoritative until current complete discovery arrives.
         capabilities = entry.data.get("capabilities")
-        legacy = capabilities.get("octo") if isinstance(capabilities, Mapping) else None
+        legacy = capabilities.get(entry.data[CONF_BED_TYPE]) if isinstance(capabilities, Mapping) else None
         return dict(legacy) if isinstance(legacy, Mapping) else None
 
     def _offline_safe_bed_type(self, entry: ConfigEntry) -> str | None:
@@ -3873,11 +3880,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     def _is_octo_one_motor_lift(self, entry: ConfigEntry) -> bool:
         """Return whether an OCTO entry uses the standalone one-motor lift layout."""
-        if entry.data.get(CONF_BED_TYPE) != BED_TYPE_OCTO:
+        if entry.data.get(CONF_BED_TYPE) not in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD}:
             return False
         data = {**entry.data, **dict(entry.options)}
         override = data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE)
-        if override not in (None, "auto"):
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO and override not in (None, "auto"):
             return override == "1" or override == 1
         snapshot = self._octo_capability_snapshot(entry)
         discovered_count = snapshot.get("discovered_motor_count") if snapshot else None
@@ -4956,14 +4963,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 for entry in (left, right)
             ):
                 errors["base"] = "vmatbasic_link_profile"
-            elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
+            elif self._offline_safe_bed_type(left) in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD} and (
                 self._is_octo_one_motor_lift(left) or self._is_octo_one_motor_lift(right)
             ):
                 # One-motor Standard OCTO entries are standalone TV/bed lifts,
                 # not bed sides. Reject even two matching lifts so the generic
                 # layout-equality gate cannot turn them into a paired bed.
                 errors["base"] = "octo_tv_lift_pairing_unsupported"
-            elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
+            elif self._offline_safe_bed_type(left) in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD} and (
                 (not self._is_octo_star2(left) and self._octo_capability_snapshot(left) is None)
                 or (
                     not self._is_octo_star2(right) and self._octo_capability_snapshot(right) is None

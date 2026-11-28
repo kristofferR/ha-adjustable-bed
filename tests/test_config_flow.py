@@ -1774,6 +1774,10 @@ class TestBluetoothDiscoveryFlow:
         )
 
         assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": BED_TYPE_OCTO}
+        )
         assert result["step_id"] == "bluetooth_confirm"
         result = await _past_app_question(hass, result)
         override_marker = next(
@@ -2229,6 +2233,10 @@ class TestBluetoothDiscoveryFlow:
             )
 
         assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": BED_TYPE_OCTO}
+        )
         assert result["step_id"] == "bluetooth_confirm"
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
@@ -2381,6 +2389,10 @@ class TestBluetoothDiscoveryFlow:
             )
 
         assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": BED_TYPE_OCTO}
+        )
         assert result["step_id"] == "bluetooth_confirm"
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
@@ -2829,11 +2841,11 @@ class TestManualFlow:
                 result["flow_id"],
                 user_input={CONF_ADDRESS: mock_bluetooth_service_info_octo_rc2.address},
             )
-            # The app question follows the device and suggests the detected bed.
+            # This shared receiver needs an explicit app choice.
             assert result["step_id"] == "select_app"
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                user_input={CONF_BED_TYPE: suggested(result, CONF_BED_TYPE)},
+                user_input={CONF_BED_TYPE: BED_TYPE_OCTO},
             )
 
         assert result["type"] == FlowResultType.FORM
@@ -6920,6 +6932,10 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
             context={"source": SOURCE_BLUETOOTH},
             data=mock_bluetooth_service_info_octo_rc2,
         )
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": BED_TYPE_OCTO}
+        )
         result = await _settings(
             hass,
             result,
@@ -6979,6 +6995,10 @@ async def test_octo_setup_can_finish_when_the_pin_check_is_inconclusive(
             DOMAIN,
             context={"source": SOURCE_BLUETOOTH},
             data=mock_bluetooth_service_info_octo_rc2,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": BED_TYPE_OCTO}
         )
         result = await _settings(
             hass,

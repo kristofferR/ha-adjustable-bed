@@ -1029,6 +1029,11 @@ class BedController(GattWriter):
         return self.supports_lights
 
     @property
+    def uses_legacy_light_switch(self) -> bool:
+        """Keep a previously shipped on/off light's switch registry identity."""
+        return False
+
+    @property
     def supports_under_bed_lights(self) -> bool:
         """Return True if bed supports dedicated under-bed light commands."""
         return False
