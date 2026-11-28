@@ -1,0 +1,1393 @@
+[
+  {
+    "id": "V001",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadUp",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 36,
+      "side": 0
+    },
+    "expected_bytes": "6e01002493"
+  },
+  {
+    "id": "V002",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadUp raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 36,
+      "nordic": true
+    },
+    "expected_bytes": "24"
+  },
+  {
+    "id": "V003",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadDown",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 37,
+      "side": 0
+    },
+    "expected_bytes": "6e01002594"
+  },
+  {
+    "id": "V004",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadDown raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 37,
+      "nordic": true
+    },
+    "expected_bytes": "25"
+  },
+  {
+    "id": "V005",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 38,
+      "side": 0
+    },
+    "expected_bytes": "6e01002695"
+  },
+  {
+    "id": "V006",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootUp raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 38,
+      "nordic": true
+    },
+    "expected_bytes": "26"
+  },
+  {
+    "id": "V007",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 39,
+      "side": 0
+    },
+    "expected_bytes": "6e01002796"
+  },
+  {
+    "id": "V008",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootDown raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 39,
+      "nordic": true
+    },
+    "expected_bytes": "27"
+  },
+  {
+    "id": "V009",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition1",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 46,
+      "side": 0
+    },
+    "expected_bytes": "6e01002e9d"
+  },
+  {
+    "id": "V010",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1 raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 46,
+      "nordic": true
+    },
+    "expected_bytes": "2e"
+  },
+  {
+    "id": "V011",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition1 program",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 43,
+      "side": 0
+    },
+    "expected_bytes": "6e01002b9a"
+  },
+  {
+    "id": "V012",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition2",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 47,
+      "side": 0
+    },
+    "expected_bytes": "6e01002f9e"
+  },
+  {
+    "id": "V013",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2 raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 47,
+      "nordic": true
+    },
+    "expected_bytes": "2f"
+  },
+  {
+    "id": "V014",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition2 program",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 44,
+      "side": 0
+    },
+    "expected_bytes": "6e01002c9b"
+  },
+  {
+    "id": "V015",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition3",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 48,
+      "side": 0
+    },
+    "expected_bytes": "6e0100309f"
+  },
+  {
+    "id": "V016",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition3 raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 48,
+      "nordic": true
+    },
+    "expected_bytes": "30"
+  },
+  {
+    "id": "V017",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition3 program",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 45,
+      "side": 0
+    },
+    "expected_bytes": "6e01002d9c"
+  },
+  {
+    "id": "V018",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMotorReset",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 49,
+      "side": 0
+    },
+    "expected_bytes": "6e010031a0"
+  },
+  {
+    "id": "V019",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMotorReset raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 49,
+      "nordic": true
+    },
+    "expected_bytes": "31"
+  },
+  {
+    "id": "V020",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModePulse",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 56,
+      "side": 0
+    },
+    "expected_bytes": "6e010038a7"
+  },
+  {
+    "id": "V021",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModePulse raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 56,
+      "nordic": true
+    },
+    "expected_bytes": "38"
+  },
+  {
+    "id": "V022",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeWave",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 57,
+      "side": 0
+    },
+    "expected_bytes": "6e010039a8"
+  },
+  {
+    "id": "V023",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeWave raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 57,
+      "nordic": true
+    },
+    "expected_bytes": "39"
+  },
+  {
+    "id": "V024",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeConstant",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 58,
+      "side": 0
+    },
+    "expected_bytes": "6e01003aa9"
+  },
+  {
+    "id": "V025",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeConstant raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 58,
+      "nordic": true
+    },
+    "expected_bytes": "3a"
+  },
+  {
+    "id": "V026",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLumberUp",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 63,
+      "side": 0
+    },
+    "expected_bytes": "6e01003fae"
+  },
+  {
+    "id": "V027",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberUp raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 63,
+      "nordic": true
+    },
+    "expected_bytes": "3f"
+  },
+  {
+    "id": "V028",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLumberDown",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 64,
+      "side": 0
+    },
+    "expected_bytes": "6e010040af"
+  },
+  {
+    "id": "V029",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberDown raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 64,
+      "nordic": true
+    },
+    "expected_bytes": "40"
+  },
+  {
+    "id": "V030",
+    "protocol": "P1",
+    "action": "deviceFunctionItemPillowUp",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 65,
+      "side": 0
+    },
+    "expected_bytes": "6e010041b0"
+  },
+  {
+    "id": "V031",
+    "protocol": "P2",
+    "action": "deviceFunctionItemPillowUp raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 65,
+      "nordic": true
+    },
+    "expected_bytes": "41"
+  },
+  {
+    "id": "V032",
+    "protocol": "P1",
+    "action": "deviceFunctionItemPillowDown",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 66,
+      "side": 0
+    },
+    "expected_bytes": "6e010042b1"
+  },
+  {
+    "id": "V033",
+    "protocol": "P2",
+    "action": "deviceFunctionItemPillowDown raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 66,
+      "nordic": true
+    },
+    "expected_bytes": "42"
+  },
+  {
+    "id": "V034",
+    "protocol": "P1",
+    "action": "deviceFunctionItemZeroGravity",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 69,
+      "side": 0
+    },
+    "expected_bytes": "6e010045b4"
+  },
+  {
+    "id": "V035",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 69,
+      "nordic": true
+    },
+    "expected_bytes": "45"
+  },
+  {
+    "id": "V036",
+    "protocol": "P1",
+    "action": "deviceFunctionItemZeroGravity program",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 102,
+      "side": 0
+    },
+    "expected_bytes": "6e010066d5"
+  },
+  {
+    "id": "V037",
+    "protocol": "P1",
+    "action": "deviceFunctionItemAntiSnoring",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 70,
+      "side": 0
+    },
+    "expected_bytes": "6e010046b5"
+  },
+  {
+    "id": "V038",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 70,
+      "nordic": true
+    },
+    "expected_bytes": "46"
+  },
+  {
+    "id": "V039",
+    "protocol": "P1",
+    "action": "deviceFunctionItemAntiSnoring program",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 105,
+      "side": 0
+    },
+    "expected_bytes": "6e010069d8"
+  },
+  {
+    "id": "V040",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeChange",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 72,
+      "side": 0
+    },
+    "expected_bytes": "6e010048b7"
+  },
+  {
+    "id": "V041",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeChange raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 72,
+      "nordic": true
+    },
+    "expected_bytes": "48"
+  },
+  {
+    "id": "V042",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 76,
+      "side": 0
+    },
+    "expected_bytes": "6e01004cbb"
+  },
+  {
+    "id": "V043",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 76,
+      "nordic": true
+    },
+    "expected_bytes": "4c"
+  },
+  {
+    "id": "V044",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 78,
+      "side": 0
+    },
+    "expected_bytes": "6e01004ebd"
+  },
+  {
+    "id": "V045",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 78,
+      "nordic": true
+    },
+    "expected_bytes": "4e"
+  },
+  {
+    "id": "V046",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLightBoard",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 80,
+      "side": 0
+    },
+    "expected_bytes": "6e010050bf"
+  },
+  {
+    "id": "V047",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLightBoard raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 80,
+      "nordic": true
+    },
+    "expected_bytes": "50"
+  },
+  {
+    "id": "V048",
+    "protocol": "P1",
+    "action": "deviceFunctionItemTVPosition",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 88,
+      "side": 0
+    },
+    "expected_bytes": "6e010058c7"
+  },
+  {
+    "id": "V049",
+    "protocol": "P2",
+    "action": "deviceFunctionItemTVPosition raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 88,
+      "nordic": true
+    },
+    "expected_bytes": "58"
+  },
+  {
+    "id": "V050",
+    "protocol": "P1",
+    "action": "deviceFunctionItemTVPosition program",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 100,
+      "side": 0
+    },
+    "expected_bytes": "6e010064d3"
+  },
+  {
+    "id": "V051",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLoungePosition",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 89,
+      "side": 0
+    },
+    "expected_bytes": "6e010059c8"
+  },
+  {
+    "id": "V052",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLoungePosition raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 89,
+      "nordic": true
+    },
+    "expected_bytes": "59"
+  },
+  {
+    "id": "V053",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLoungePosition program",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 101,
+      "side": 0
+    },
+    "expected_bytes": "6e010065d4"
+  },
+  {
+    "id": "V054",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeAllOff",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 94,
+      "side": 0
+    },
+    "expected_bytes": "6e01005ecd"
+  },
+  {
+    "id": "V055",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeAllOff raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 94,
+      "nordic": true
+    },
+    "expected_bytes": "5e"
+  },
+  {
+    "id": "V056",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage10MinuteTimer",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 95,
+      "side": 0
+    },
+    "expected_bytes": "6e01005fce"
+  },
+  {
+    "id": "V057",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage10MinuteTimer raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 95,
+      "nordic": true
+    },
+    "expected_bytes": "5f"
+  },
+  {
+    "id": "V058",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage30MinuteTimer",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 97,
+      "side": 0
+    },
+    "expected_bytes": "6e010061d0"
+  },
+  {
+    "id": "V059",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage30MinuteTimer raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 97,
+      "nordic": true
+    },
+    "expected_bytes": "61"
+  },
+  {
+    "id": "V060",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage20MinuteTimer",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 99,
+      "side": 0
+    },
+    "expected_bytes": "6e010063d2"
+  },
+  {
+    "id": "V061",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage20MinuteTimer raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 99,
+      "nordic": true
+    },
+    "expected_bytes": "63"
+  },
+  {
+    "id": "V062",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMotor3Up",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 113,
+      "side": 0
+    },
+    "expected_bytes": "6e010071e0"
+  },
+  {
+    "id": "V063",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMotor3Up raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 113,
+      "nordic": true
+    },
+    "expected_bytes": "71"
+  },
+  {
+    "id": "V064",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMotor3Down",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 114,
+      "side": 0
+    },
+    "expected_bytes": "6e010072e1"
+  },
+  {
+    "id": "V065",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMotor3Down raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 114,
+      "nordic": true
+    },
+    "expected_bytes": "72"
+  },
+  {
+    "id": "V066",
+    "protocol": "P1",
+    "action": "deviceFunctionItemCoaxingSleepMode",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 134,
+      "side": 0
+    },
+    "expected_bytes": "6e010086f5"
+  },
+  {
+    "id": "V067",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCoaxingSleepMode raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 134,
+      "nordic": true
+    },
+    "expected_bytes": "86"
+  },
+  {
+    "id": "V068",
+    "protocol": "P1",
+    "action": "deviceFunctionItemCoaxingSleepMode program",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 137,
+      "side": 0
+    },
+    "expected_bytes": "6e010089f8"
+  },
+  {
+    "id": "V069",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFan1InstensityStrengthen",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 138,
+      "side": 0
+    },
+    "expected_bytes": "6e01008af9"
+  },
+  {
+    "id": "V070",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFan1InstensityStrengthen raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 138,
+      "nordic": true
+    },
+    "expected_bytes": "8a"
+  },
+  {
+    "id": "V071",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFan2InstensityStrengthen",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 139,
+      "side": 0
+    },
+    "expected_bytes": "6e01008bfa"
+  },
+  {
+    "id": "V072",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFan2InstensityStrengthen raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 139,
+      "nordic": true
+    },
+    "expected_bytes": "8b"
+  },
+  {
+    "id": "V073",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFanForwardAndBackwardChange",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 140,
+      "side": 0
+    },
+    "expected_bytes": "6e01008cfb"
+  },
+  {
+    "id": "V074",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFanForwardAndBackwardChange raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 140,
+      "nordic": true
+    },
+    "expected_bytes": "8c"
+  },
+  {
+    "id": "V075",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFanAllOff",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 161,
+      "side": 0
+    },
+    "expected_bytes": "6e0100a110"
+  },
+  {
+    "id": "V076",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFanAllOff raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 161,
+      "nordic": true
+    },
+    "expected_bytes": "a1"
+  },
+  {
+    "id": "V077",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFanChangeMode",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 162,
+      "side": 0
+    },
+    "expected_bytes": "6e0100a211"
+  },
+  {
+    "id": "V078",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFanChangeMode raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 162,
+      "nordic": true
+    },
+    "expected_bytes": "a2"
+  },
+  {
+    "id": "V079",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFanTimer2Hour",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 166,
+      "side": 0
+    },
+    "expected_bytes": "6e0100a615"
+  },
+  {
+    "id": "V080",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFanTimer2Hour raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 166,
+      "nordic": true
+    },
+    "expected_bytes": "a6"
+  },
+  {
+    "id": "V081",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFanTimer3Hour",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 167,
+      "side": 0
+    },
+    "expected_bytes": "6e0100a716"
+  },
+  {
+    "id": "V082",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFanTimer3Hour raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 167,
+      "nordic": true
+    },
+    "expected_bytes": "a7"
+  },
+  {
+    "id": "V083",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFanTimer5Hour",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 168,
+      "side": 0
+    },
+    "expected_bytes": "6e0100a817"
+  },
+  {
+    "id": "V084",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFanTimer5Hour raw",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 168,
+      "nordic": true
+    },
+    "expected_bytes": "a8"
+  },
+  {
+    "id": "V085",
+    "protocol": "P1",
+    "action": "STOP left",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 110,
+      "side": 0
+    },
+    "expected_bytes": "6e01006edd"
+  },
+  {
+    "id": "V086",
+    "protocol": "P1",
+    "action": "head up right",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 36,
+      "side": 1
+    },
+    "expected_bytes": "6e01012494"
+  },
+  {
+    "id": "V087",
+    "protocol": "P1",
+    "action": "Light timer zero sentinel",
+    "inputs": {
+      "builder": "time",
+      "seconds": 0
+    },
+    "expected_bytes": "6e0bffff77"
+  },
+  {
+    "id": "V088",
+    "protocol": "P1",
+    "action": "Light timer 300 seconds",
+    "inputs": {
+      "builder": "time",
+      "seconds": 300
+    },
+    "expected_bytes": "6e0b012ca6"
+  },
+  {
+    "id": "V089",
+    "protocol": "P1",
+    "action": "Color low-level channel tuple",
+    "inputs": {
+      "builder": "channels",
+      "channels": [
+        1,
+        2,
+        3
+      ]
+    },
+    "expected_bytes": "6e0cff017a6e0d020380"
+  },
+  {
+    "id": "V090",
+    "protocol": "P1",
+    "action": "Anti-snore switch 0",
+    "inputs": {
+      "builder": "extended",
+      "category": 6,
+      "subcommand": 1,
+      "operation": 1,
+      "payload": [
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e200906010100009f"
+  },
+  {
+    "id": "V091",
+    "protocol": "P1",
+    "action": "Anti-snore switch 1",
+    "inputs": {
+      "builder": "extended",
+      "category": 6,
+      "subcommand": 1,
+      "operation": 1,
+      "payload": [
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "6e20090601010001a0"
+  },
+  {
+    "id": "V092",
+    "protocol": "P1",
+    "action": "Anti-snore query",
+    "inputs": {
+      "builder": "extended",
+      "category": 6,
+      "subcommand": 1,
+      "operation": 0,
+      "payload": [
+        0
+      ]
+    },
+    "expected_bytes": "6e2008060100009d"
+  },
+  {
+    "id": "V093",
+    "protocol": "P1",
+    "action": "Sleep name query",
+    "inputs": {
+      "builder": "extended",
+      "category": 6,
+      "subcommand": 3,
+      "operation": 0,
+      "payload": [
+        0
+      ]
+    },
+    "expected_bytes": "6e2008060300009f"
+  },
+  {
+    "id": "V094",
+    "protocol": "P1",
+    "action": "Clock low/high raw inputs",
+    "inputs": {
+      "builder": "clock",
+      "value": 300,
+      "mode": 2
+    },
+    "expected_bytes": "6e052c009f6e06010277"
+  },
+  {
+    "id": "V095",
+    "protocol": "P1",
+    "action": "Repeat list query",
+    "inputs": {
+      "builder": "extended",
+      "category": 5,
+      "subcommand": 1,
+      "operation": 0,
+      "payload": [
+        0
+      ]
+    },
+    "expected_bytes": "6e2008050100009c"
+  },
+  {
+    "id": "V096",
+    "protocol": "P1",
+    "action": "Repeat delete raw id1",
+    "inputs": {
+      "builder": "extended",
+      "category": 5,
+      "subcommand": 2,
+      "operation": 1,
+      "payload": [
+        1
+      ]
+    },
+    "expected_bytes": "6e2008050201019f"
+  },
+  {
+    "id": "V097",
+    "protocol": "P1",
+    "action": "Repeat add ordered raw fields",
+    "inputs": {
+      "builder": "extended",
+      "category": 5,
+      "subcommand": 1,
+      "operation": 1,
+      "payload": [
+        1,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "expected_bytes": "6e200d050101010102030405b2"
+  },
+  {
+    "id": "V098",
+    "protocol": "P1",
+    "action": "App frozen response literal",
+    "inputs": {
+      "builder": "literal_checksum",
+      "prefix": [
+        110,
+        9,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e09010078"
+  },
+  {
+    "id": "V099",
+    "protocol": "P1",
+    "action": "App frozen response literal",
+    "inputs": {
+      "builder": "literal_checksum",
+      "prefix": [
+        110,
+        14,
+        0,
+        3
+      ]
+    },
+    "expected_bytes": "6e0e00037f"
+  },
+  {
+    "id": "V100",
+    "protocol": "P1",
+    "action": "Color red-byte channels",
+    "inputs": {
+      "builder": "channels",
+      "channels": [
+        255,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e0cffff786e0d00007b"
+  },
+  {
+    "id": "V101",
+    "protocol": "P1",
+    "action": "ECO RGB warm bytes",
+    "inputs": {
+      "builder": "extended",
+      "category": 4,
+      "subcommand": 1,
+      "operation": 1,
+      "payload": [
+        0,
+        255,
+        140,
+        20
+      ]
+    },
+    "expected_bytes": "6e200b04010100ff8c143e"
+  },
+  {
+    "id": "V102",
+    "protocol": "P1",
+    "action": "ECO RGB neutral bytes",
+    "inputs": {
+      "builder": "extended",
+      "category": 4,
+      "subcommand": 1,
+      "operation": 1,
+      "payload": [
+        0,
+        255,
+        220,
+        120
+      ]
+    },
+    "expected_bytes": "6e200b04010100ffdc78f2"
+  },
+  {
+    "id": "V103",
+    "protocol": "P1",
+    "action": "ECO RGB cool bytes",
+    "inputs": {
+      "builder": "extended",
+      "category": 4,
+      "subcommand": 1,
+      "operation": 1,
+      "payload": [
+        0,
+        255,
+        255,
+        255
+      ]
+    },
+    "expected_bytes": "6e200b04010100ffffff9c"
+  },
+  {
+    "id": "V104",
+    "protocol": "P1",
+    "action": "ECO RGB power off",
+    "inputs": {
+      "builder": "extended",
+      "category": 4,
+      "subcommand": 4,
+      "operation": 1,
+      "payload": [
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e20090404010000a0"
+  },
+  {
+    "id": "V105",
+    "protocol": "P1",
+    "action": "ECO sleep ON/OFF",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 135,
+      "side": 0
+    },
+    "expected_bytes": "6e010087f6"
+  },
+  {
+    "id": "V106",
+    "protocol": "P1",
+    "action": "ECO sleep SM",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 137,
+      "side": 0
+    },
+    "expected_bytes": "6e010089f8"
+  },
+  {
+    "id": "V107",
+    "protocol": "P1",
+    "action": "Clock capability query",
+    "inputs": {
+      "builder": "literal_checksum",
+      "prefix": [
+        110,
+        8,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "6e08010178"
+  },
+  {
+    "id": "V108",
+    "protocol": "P1",
+    "action": "Light capability query",
+    "inputs": {
+      "builder": "literal_checksum",
+      "prefix": [
+        110,
+        10,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "6e0a000179"
+  },
+  {
+    "id": "V109",
+    "protocol": "P1",
+    "action": "Music capability query EXCLUDED",
+    "inputs": {
+      "builder": "literal_checksum",
+      "prefix": [
+        110,
+        21,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "6e15010185"
+  },
+  {
+    "id": "V110",
+    "protocol": "P1",
+    "action": "Local date/time2026-11-27 13:44:00",
+    "inputs": {
+      "builder": "extended",
+      "category": 8,
+      "subcommand": 3,
+      "operation": 1,
+      "payload": [
+        56,
+        11,
+        27,
+        13,
+        44,
+        0
+      ]
+    },
+    "expected_bytes": "6e200d080301380b1b0d2c003e"
+  },
+  {
+    "id": "V111",
+    "protocol": "P1",
+    "action": "Repeat weekdays enabled at07:30 ZeroG",
+    "inputs": {
+      "builder": "repeat_ui",
+      "id": 1,
+      "hour": 7,
+      "minute": 30,
+      "mode": 69,
+      "days": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday"
+      ],
+      "enabled": true
+    },
+    "expected_bytes": "6e200d0501010100071e45f906"
+  },
+  {
+    "id": "V112",
+    "protocol": "P1",
+    "action": "Repeat once enabled midnight AntiSnore",
+    "inputs": {
+      "builder": "repeat_ui",
+      "id": 7,
+      "hour": 0,
+      "minute": 0,
+      "mode": 70,
+      "days": [
+        "Once"
+      ],
+      "enabled": true
+    },
+    "expected_bytes": "6e200d050101070000004601f0"
+  },
+  {
+    "id": "V113",
+    "protocol": "P1",
+    "action": "Repeat all days disabled23:59 ZeroG",
+    "inputs": {
+      "builder": "repeat_ui",
+      "id": 2,
+      "hour": 23,
+      "minute": 59,
+      "mode": 69,
+      "days": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "enabled": false
+    },
+    "expected_bytes": "6e200d0501010200173b45fe39"
+  },
+  {
+    "id": "V114",
+    "protocol": "P1",
+    "action": "Startup ExitLimit",
+    "inputs": {
+      "builder": "literal_checksum",
+      "prefix": [
+        110,
+        2,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e02010071"
+  },
+  {
+    "id": "V115",
+    "protocol": "P2",
+    "action": "Startup ExitLimit",
+    "inputs": {
+      "builder": "generic",
+      "opcode": 0,
+      "nordic": true
+    },
+    "expected_bytes": "00"
+  }
+]
