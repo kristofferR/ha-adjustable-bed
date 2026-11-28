@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     )
     from .doublesleep.controller import DoubleSleepController as DoubleSleepController
     from .dreamsense.awmotion import AwMotionController as AwMotionController
+    from .dreamsense.flexx_motion import FlexxMotionController as FlexxMotionController
     from .dreamsense.likimio import LikimioController as LikimioController
     from .ergo_slim import ErgoSlimController as ErgoSlimController
     from .ergobq.controller import ErgoBQController as ErgoBQController
@@ -85,6 +86,7 @@ if TYPE_CHECKING:
     from .keeson.jalon import JalonController as JalonController
     from .keeson.junasleep import JunaSleepController as JunaSleepController
     from .keeson.kingkoil import KingKoilController as KingKoilController
+    from .keeson.konfurt import KonfurtController as KonfurtController
     from .keeson.ormatek import OrmatekController as OrmatekController
     from .keeson.powersbedding import PowersBeddingController as PowersBeddingController
     from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
@@ -220,6 +222,7 @@ _EXPORT_MODULES = {
     "NerumController": "nerum.controller",
     "RelaxMotionController": "relax_motion.controller",
     "CheersSleepController": "cheerssleep.controller",
+    "MattressPointController": "mattresspoint.controller",
     "SleeptimeController": "sleeptime.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
@@ -263,6 +266,7 @@ _EXPORT_MODULES = {
     "AlyaController": "alya.controller",
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
+    "KonfurtController": ("keeson.konfurt", "KonfurtController"),
     "ErgoSportiveController": ("keeson.ergosportive", "ErgoSportiveController"),
     "KingKoilController": ("keeson.kingkoil", "KingKoilController"),
     "SomosController": ("keeson.somos", "SomosController"),
@@ -313,6 +317,7 @@ _EXPORT_MODULES = {
     "KaidiController": "kaidi.controller",
     "MeisemobellController": "meisemobell.controller",
     "LevaController": "leva",
+    "FlexxMotionController": "dreamsense.flexx_motion",
     "AwMotionController": "dreamsense.awmotion",
     "LikimioController": "dreamsense.likimio",
     "MuuegmController": "dreamsense.muuegm",

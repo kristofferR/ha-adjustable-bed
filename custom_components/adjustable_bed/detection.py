@@ -622,13 +622,18 @@ def _rests_on_shared_service(
 ) -> bool:
     """Return whether only shared services led to a bed type.
 
-    A declared name or maker hint confirms the match, as does a name a
+    A declared receiver name or maker hint confirms the match, as does a name a
     detection rule recorded (``name:...``, other than an app candidate's).
     """
     return (
         any(not _is_standard_service(uuid) for uuid in service_uuids)
         and _has_only_generic_uuids(service_uuids)
-        and not any(isinstance(hint, NameHint | ManufacturerHint) for hint in first.hints)
+        # AVEK scan prefixes suggest an app, not an unrelated shared-UUID receiver.
+        and not any(
+            isinstance(hint, ManufacturerHint)
+            or isinstance(hint, NameHint) and hint.bed_types != frozenset({"avek"})
+            for hint in first.hints
+        )
         and not any(
             signal.startswith("name:") and not signal.endswith("candidate")
             for signal in result.signals
@@ -750,6 +755,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LINX: "Linx app",
     BED_TYPE_RESTONIC: "Restonic app (Prime / Lombar / Infinity)",
     BED_TYPE_FLEXISPOT: "Flexispot app",
+    "konfurt": "KONFURT app",
     "ergosportive": "ErgoSportive app (selected remote subset)",
     BED_TYPE_GHOSTBED: "GhostBed app",
     "kingkoil": "King Koil Bed app",
@@ -779,6 +785,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "smartbed": "SmartBed app (Okin receivers, Amada beds)",
     BED_TYPE_OKIN_DOT: "Okin DOT remotes (RF1058, RF34 and RF6707)",
     BED_TYPE_OKIN_FFE: "Okin receiver (13 and 15 series)",
+    "mattresspoint": "MattressPoint app (BOX2422 / BOX2442)",
     "powersbedding": "PowersBedding app",
     "hestia_motion": "Hestia Motion app",
     BED_TYPE_OKIN_ORE: "Okin receiver (older ORE remotes)",
@@ -786,6 +793,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app",
     BED_TYPE_MLILY: "MLILY Control app",
     BED_TYPE_OKIMIKI: "Okimiki app",
+    "flexx_motion": "Flexx Motion",
     "awmotion": "AW MOTION (SilentNight / HighClare)",
     "dreamsense": "Dream Sense Bed",
     "muuegm": "MUUEGM (ABF03, ABF07, NUPG400)",
@@ -885,6 +893,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SUTA: "SUTA Smart Home app",
     BED_TYPE_TRUEMOTION: "trueMotion app",
     BED_TYPE_SUTA_KING_KOIL: "King Koil (SUTA) app",
+    "avek": "AVEK Ergo System",
     "active_sleep": "Active Sleep (Paramount)",
     "paramount": "Paramount Bed Operation (ベッド操作)",
     BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
@@ -1064,8 +1073,8 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {
-        "ergosportive", BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "awmotion", "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_JUNASLEEP, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
-).union({"intellibed", BED_TYPE_PURELY_SLEEP, "motionflex", BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic", "askona"})
+        "ergosportive", BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", "konfurt", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "flexx_motion", "awmotion", "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_JUNASLEEP, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+).union({"intellibed", BED_TYPE_PURELY_SLEEP, "motionflex", BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic", "askona", "mattresspoint"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
 PROTOCOL_ROUTES: Final = frozenset(
@@ -1525,7 +1534,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in (BED_TYPE_JUNASLEEP, "intellibed", "active_sleep", BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_SMART_BASE, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "thrivesleep", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_AMADA, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_JUNASLEEP, "intellibed", "active_sleep", "avek", BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_SMART_BASE, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "thrivesleep", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_AMADA, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1847,6 +1856,14 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_SIMMONS_BLUE:
             result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_SIMMONS_BLUE]
             result.signals.append("name:simmons_blue_app_candidate")
+    if (isinstance(platform_name, str) and platform_name.lower().startswith("smartbed")
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        if result.bed_type is None:
+            result = DetectionResult("mattresspoint", 0.3, ["name:mattresspoint_app_candidate"])
+        elif result.bed_type != "mattresspoint":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "mattresspoint"]))
+            result.signals.append("name:mattresspoint_app_candidate")
     # Shared name prefix offers this app; it cannot identify its protocol alone.
     if first.name(BED_TYPE_AMADA) and not any(s.startswith("excluded:") for s in result.signals):
         if result.bed_type is None:
@@ -2004,6 +2021,12 @@ def _detect_with_first_pass(
         elif result.bed_type != "saatva":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "saatva"]))
             result.signals.append("service:saatva_app_candidate")
+    if first.name("flexx_motion") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("flexx_motion", 0.3, ["name:flexx_motion_app_candidate"])
+        elif result.bed_type != "flexx_motion":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "flexx_motion"]))
+            result.signals.append("name:flexx_motion_app_candidate")
     if first.name("awmotion") and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult("awmotion", 0.3, ["name:awmotion_app_candidate"])
@@ -2346,6 +2369,15 @@ def _detect_bed_type_with_app_candidates(
             result.ambiguous_types = list(dict.fromkeys(
                 [*(result.ambiguous_types or ()), BED_TYPE_ENSO2]
             ))
+            result.signals.append(signal)
+    if first.name("avek") and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        signal = "app_hint:avek"
+        if result.bed_type is None:
+            result = DetectionResult("avek", 0.3, [*result.signals, signal])
+        elif result.bed_type != "avek":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "avek"]))
             result.signals.append(signal)
     from .profiles.askona import admitted_name as askona_name
 

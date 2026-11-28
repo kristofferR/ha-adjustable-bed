@@ -136,6 +136,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
     BED_TYPE_RESTONIC: frozenset({"box15", "box1220", "box24"}),
+    "konfurt": frozenset({"2", "3", "4"}),
     "kingkoil": frozenset({"KSBT03CK", "KSBT03CL"}),
     BED_TYPE_JUNASLEEP: frozenset({"a", "b"}),
     BED_TYPE_SOMOS: frozenset({"a", "b", "c", "d", "e"}),

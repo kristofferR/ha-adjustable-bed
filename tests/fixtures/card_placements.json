@@ -140,6 +140,9 @@
  "binary_sensor:linak_position_feedback_fault": {
   "card_section": "hidden"
  },
+ "binary_sensor:mattresspoint_alarm": {
+  "card_section": "utility"
+ },
  "binary_sensor:memory_save_response_observed": {
   "card_section": "utility"
  },
@@ -594,6 +597,9 @@
  },
  "button:auxiliary_action": {
   "card_section": "utility"
+ },
+ "button:avek_release": {
+  "card_section": "hidden"
  },
  "button:back_down": {
   "card_section": "motors",
@@ -1593,6 +1599,25 @@
  "button:kingkoil_status_query": {
   "card_section": "utility"
  },
+ "button:konfurt_massage": {
+  "card_section": "massage"
+ },
+ "button:konfurt_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:konfurt_massage_head": {
+  "card_section": "massage"
+ },
+ "button:konfurt_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:konfurt_massage_wave": {
+  "card_section": "massage"
+ },
+ "button:konfurt_query_alarm": {
+  "card_section": "utility"
+ },
  "button:legs_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1789,6 +1814,18 @@
  },
  "button:massage_wave_previous": {
   "card_section": "massage"
+ },
+ "button:mattresspoint_disable_alarm": {
+  "card_section": "utility"
+ },
+ "button:mattresspoint_query_alarm": {
+  "card_section": "utility"
+ },
+ "button:mattresspoint_query_massage": {
+  "card_section": "utility"
+ },
+ "button:mattresspoint_release": {
+  "card_section": "hidden"
  },
  "button:maxprime_massage_timer_toggle": {
   "card_section": "massage"
@@ -4837,6 +4874,9 @@
  "select:flexispot_right_sensitivity": {
   "card_section": "utility"
  },
+ "select:flexx_motion_color": {
+  "card_section": "lighting"
+ },
  "select:footwarming_timer": {
   "card_section": "climate"
  },
@@ -5663,6 +5703,22 @@
  },
  "sensor:kingkoil_timer_ui": {
   "card_section": "massage"
+ },
+ "sensor:konfurt_alarm_hour": {
+  "card_section": "hidden"
+ },
+ "sensor:konfurt_alarm_minute": {
+  "card_section": "hidden"
+ },
+ "sensor:konfurt_alarm_on": {
+  "card_section": "hidden"
+ },
+ "sensor:konfurt_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "sensor:konfurt_wave": {
+  "card_section": "hidden"
  },
  "sensor:leggett_led_mask": {
   "card_section": "hidden"
@@ -6513,6 +6569,9 @@
  "switch:jerome_synchronization": {
   "card_section": "utility"
  },
+ "switch:konfurt_massage": {
+  "card_section": "massage"
+ },
  "switch:l2motion_sync": {
   "card_section": "utility"
  },
@@ -6526,6 +6585,9 @@
   "card_section": "utility"
  },
  "switch:massage": {
+  "card_section": "massage"
+ },
+ "switch:mattresspoint_massage": {
   "card_section": "massage"
  },
  "switch:moodbase_light_timer_enabled": {

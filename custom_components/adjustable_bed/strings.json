@@ -199,7 +199,8 @@
           "check_transport_ok": "Check: connection type available",
           "check_device_info": "Check: device information",
           "check_positions": "Check: positions",
-          "check_connected_via_proxy": "Check: connected through a proxy"
+          "check_connected_via_proxy": "Check: connected through a proxy",
+          "check_mattresspoint_uart_missing": "❌ The Bluetooth device lacks the write-without-response and status channels MattressPoint needs. Check the device and selected app."
         },
         "data_description": {
           "action": "**Check again** checks the bed again without losing the settings you just entered.",
@@ -926,7 +927,8 @@
       "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
       "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side.",
       "alya_layout_invalid": "The selected Alya layout is missing its required Bluetooth write/notify roles. Choose the layout shown in your app.",
-      "ergobq_identity": "Select an ErgoBQ BED product, a valid six-byte serial (or blank), and a channel stamp of at most 510 UTF-8 bytes."
+      "ergobq_identity": "Select an ErgoBQ BED product, a valid six-byte serial (or blank), and a channel stamp of at most 510 UTF-8 bytes.",
+      "mattresspoint_gatt": "The Bluetooth device lacks the write-without-response and status channels MattressPoint needs. Check the device and selected app."
     }
   },
   "options": {
@@ -1792,6 +1794,12 @@
   },
   "entity": {
     "button": {
+      "konfurt_massage": {"name": "Toggle massage"},
+      "konfurt_massage_head": {"name": "Cycle head massage"},
+      "konfurt_massage_foot": {"name": "Cycle feet massage"},
+      "konfurt_massage_wave": {"name": "Cycle massage wave"},
+      "konfurt_massage_timer": {"name": "Cycle massage timer"},
+      "konfurt_query_alarm": {"name": "Refresh bed alarm"},
       "smart_base_query": {"name": "Refresh bed settings"},
       "smart_base_cancel_alarm": {"name": "Cancel alarm"},
       "active_sleep_refresh": {
@@ -1992,6 +2000,9 @@
       },
       "dorsal_zero_gravity_down": {
         "name": "Zero gravity motor down"
+      },
+      "avek_release": {
+        "name": "Release held control"
       },
       "ifit_release": { "name": "Release held control" },
       "leva_release": { "name": "Release motion control" },
@@ -4382,6 +4393,42 @@
       "junasleep_lumbar_down": {
         "name": "Waist out"
       },
+      "mattresspoint_on": {
+        "name": "Start massage"
+      },
+      "mattresspoint_timer": {
+        "name": "Cycle massage timer"
+      },
+      "mattresspoint_head_up": {
+        "name": "Increase head massage"
+      },
+      "mattresspoint_head_down": {
+        "name": "Decrease head massage"
+      },
+      "mattresspoint_foot_up": {
+        "name": "Increase foot massage"
+      },
+      "mattresspoint_foot_down": {
+        "name": "Decrease foot massage"
+      },
+      "mattresspoint_wave_up": {
+        "name": "Next massage wave"
+      },
+      "mattresspoint_wave_down": {
+        "name": "Previous massage wave"
+      },
+      "mattresspoint_disable_alarm": {
+        "name": "Disable alarm"
+      },
+      "mattresspoint_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "mattresspoint_query_massage": {
+        "name": "Refresh massage"
+      },
+      "mattresspoint_release": {
+        "name": "Release held control"
+      },
       "dreamotion_smart_back": {
         "name": "Cycle back massage"
       },
@@ -4914,6 +4961,13 @@
       }
     },
     "sensor": {
+      "konfurt_timer": {"name": "Massage timer"},
+      "konfurt_wave": {"name": "Massage wave"},
+      "konfurt_alarm_on": {"name": "Bed alarm enabled"},
+      "konfurt_alarm_hour": {"name": "Bed alarm hour"},
+      "konfurt_alarm_minute": {"name": "Bed alarm minute"},
+      "konfurt_alarm_repeat": {"name": "Bed alarm weekday mask"},
+      "konfurt_alarm_type": {"name": "Bed alarm action code"},
       "ergosportive_twitch": {"name": "Movement count"},
       "purely_sleep_protocol_version": {
         "name": "Protocol version"
@@ -6397,6 +6451,8 @@
       }
     },
     "switch": {
+      "konfurt_massage": {"name": "Massage"},
+      "mattresspoint_massage": { "name": "Massage" },
         "active_sleep_motor_lock": {
           "name": "{motor} motor lock"
         },
@@ -7012,6 +7068,12 @@
       },
       "kingkoil_light_report": {
         "name": "Reported light"
+      },
+      "mattresspoint_massage": {
+        "name": "Massage active (last command or report)"
+      },
+      "mattresspoint_alarm": {
+        "name": "Alarm enabled (last command or report)"
       }
     },
     "number": {
@@ -7558,6 +7620,19 @@
       }
     },
     "select": {
+      "flexx_motion_color": {
+        "name": "Light color",
+        "state": {
+          "yellow": "Yellow",
+          "green": "Green",
+          "sky_blue": "Sky blue",
+          "blue": "Blue",
+          "violet": "Violet",
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange"
+        }
+      },
         "active_sleep_speed": {
           "name": "Movement speed",
           "state": {
@@ -12663,6 +12738,11 @@
     }
   },
   "exceptions": {
+    "konfurt_gatt": {"message": "KONFURT needs writable FFE9 in FFE5 and notifying FFE4 in FFE0. Check the selected app and Bluetooth device."},
+    "konfurt_layout": {"message": "Choose the 2, 3 or 4 motor layout shown in the KONFURT app."},
+    "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},
+    "konfurt_alarm": {"message": "KONFURT sets an alarm for today's weekday only. Choose no wake action, massage or Memory 1."},
+    "konfurt_massage_unknown": {"message": "Wait for a massage status report from this connection before turning massage on or off. You can use Toggle massage without a report."},
     "ergosportive_session": {"message": "The ErgoSportive connection changed. Reconnect before sending another command."},
     "ergosportive_gatt": {"message": "This receiver is missing the ErgoSportive UART write or notification channel."},
     "ergosportive_subscription": {"message": "Subscribe to the current ErgoSportive notification channel before sending a command."},
@@ -13375,6 +13455,12 @@
     "bed_not_loaded": {
       "message": "The bed is not loaded. Reload it, then try again."
     },
+    "avek_hold_duration": {
+      "message": "Hold duration must be an integer from 1 to 60000 milliseconds."
+    },
+    "avek_identity_required": {
+      "message": "The bed has not completed its identity exchange. Reconnect before using Initial."
+    },
     "bed_not_connected": {
       "message": "The bed is not connected. Check that it is powered on and in range, then try again."
     },
@@ -13799,10 +13885,10 @@
       "message": "The bed connection or selected layout changed. Try the action again."
     },
     "dreamsense_product": {
-      "message": "Choose the product saved in Dream Sense Bed."
+      "message": "Choose the product saved in the bed app."
     },
     "dreamsense_transport": {
-      "message": "The bed did not provide a writable Dream Sense command endpoint and notifications."
+      "message": "The bed did not provide a writable command endpoint and notifications."
     },
     "dreamsense_session": {
       "message": "The bed connection or selected product changed. Try the action again."
@@ -13814,7 +13900,7 @@
       "message": "Target the physical bed for this setting, without a side."
     },
     "dreamsense_action": {
-      "message": "Choose a control or setting offered by this Dream Sense product."
+      "message": "Choose a control or setting offered by this bed product."
     },
     "dreamsense_capability": {
       "message": "The bed must report support for this feature on the current connection first."
@@ -13823,7 +13909,7 @@
       "message": "The bed did not return its alarm list. Try again."
     },
     "dreamsense_alarm_record": {
-      "message": "Choose an existing alarm number from the current bed alarm list. Creating a new record is unavailable."
+      "message": "Refresh the bed alarm list and choose a current alarm number."
     },
     "alarm_slot_required": {
       "message": "Choose the existing alarm number for {device_name}."
@@ -13971,6 +14057,15 @@
     },
     "jobs_alarm_action_invalid": {
       "message": "Choose an action supported by this alarm kind."
+    },
+    "mattresspoint_gatt": {
+      "message": "The Bluetooth device lacks the write-without-response and status channels MattressPoint needs. Check the device and selected app."
+    },
+    "mattresspoint_variant": {
+      "message": "Choose BOX2422 or BOX2442 in MattressPoint setup."
+    },
+    "mattresspoint_hold": {
+      "message": "Choose a hold duration between 1 and 60000 milliseconds."
     }
   },
   "issues": {

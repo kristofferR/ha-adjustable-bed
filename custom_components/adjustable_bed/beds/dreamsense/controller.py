@@ -103,6 +103,24 @@ class DreamSenseController(BedController):
     _requires_notify: ClassVar[bool] = True
     _routes: ClassVar[tuple[GattRoute, ...]] = ROUTES
     _menu_queries: ClassVar[tuple[str, ...]] = ("CheckClock", "CheckLight", "CheckMusic")
+    _cleanup_after_attempt: ClassVar[bool] = False
+    _pace_all_writes: ClassVar[bool] = True
+
+    @property
+    def _io_timeout_s(self) -> float | None:
+        return None
+
+    @property
+    def _tick_ms(self) -> int:
+        return TICK_MS
+
+    @property
+    def _probe_ms(self) -> int:
+        return PROBE_MS
+
+    @property
+    def _expiry_ms(self) -> int:
+        return EXPIRY_MS
 
     def __init__(
         self,
@@ -262,6 +280,7 @@ class DreamSenseController(BedController):
         *,
         own: bool = True,
         on_write: Callable[[], None] | None = None,
+        on_attempt: Callable[[], None] | None = None,
         validate: Callable[[], object] | None = None,
         release_session: Session | None = None,
         not_after: float | None = None,
@@ -281,8 +300,8 @@ class DreamSenseController(BedController):
                     if own:
                         note_frame_skipped()
                     return False
-                if self._last_write is not None:
-                    delay = max(0, TICK_MS - (monotonic() - self._last_write) * 1000)
+                if self._pace_all_writes and self._last_write is not None:
+                    delay = max(0, self._tick_ms - (monotonic() - self._last_write) * 1000)
                     if delay:
                         try:
                             await self._wait(round(delay), cancel)
@@ -309,9 +328,12 @@ class DreamSenseController(BedController):
                     response=session.response,
                     characteristic=session.write,
                 )
-                await session.client.write_gatt_char(
-                    session.write, packet, response=session.response
-                )
+                if on_attempt is not None:
+                    on_attempt()
+                async with asyncio.timeout(self._io_timeout_s):
+                    await session.client.write_gatt_char(
+                        session.write, packet, response=session.response
+                    )
                 if on_write is not None:
                     on_write()
                 if own:
@@ -361,9 +383,14 @@ class DreamSenseController(BedController):
             with self._transaction(startup=selected):
                 if selected.notify is not None:
                     self._notify_session = selected
-                    subscribed = await settled(client.start_notify(
-                        selected.notify, partial(self._notification, selected)
-                    ))
+                    async def subscribe() -> object:
+                        assert selected.notify is not None
+                        async with asyncio.timeout(self._io_timeout_s):
+                            return await client.start_notify(
+                                selected.notify, partial(self._notification, selected)
+                            )
+
+                    subscribed = await settled(subscribe())
                     if subscribed is False:
                         raise invalid("dreamsense_transport")
                 await self._send(
@@ -378,7 +405,7 @@ class DreamSenseController(BedController):
                     await self._clock(own=False)
                 # Product menu probes are unconditional and ordered. Their replies gate UI only.
                 for index, action in enumerate(self._menu_queries, 1):
-                    deadline = menu_started + index * PROBE_MS / 1000
+                    deadline = menu_started + index * self._probe_ms / 1000
                     await self._wait(max(0, round((deadline - monotonic()) * 1000)))
                     await self._send(
                         self.profile.frame(
@@ -413,7 +440,7 @@ class DreamSenseController(BedController):
         self._known.update(self._receive.capabilities)
         if self._receive.pending:
             self._expiry = asyncio.get_running_loop().call_later(
-                EXPIRY_MS / 1000, self._receive.expire
+                self._expiry_ms / 1000, self._receive.expire
             )
         if revision != self._receive.alarm_revision:
             self._alarm_event.set()
@@ -449,7 +476,8 @@ class DreamSenseController(BedController):
             if self._notify_session is session and self._owns(session):
                 self._notify_session = None
                 if session.notify is not None:
-                    await session.client.stop_notify(session.notify)
+                    async with asyncio.timeout(self._io_timeout_s):
+                        await session.client.stop_notify(session.notify)
 
         await settled(unsubscribe())
 
@@ -514,6 +542,7 @@ class DreamSenseController(BedController):
             self._active_action = True
             deadline = monotonic() + duration_ms / 1000
             sent = False
+            attempted = False
             frame_sent = False
             elapsed = 0
 
@@ -521,13 +550,17 @@ class DreamSenseController(BedController):
                 nonlocal sent, frame_sent
                 sent = frame_sent = True
 
+            def admitted() -> None:
+                nonlocal attempted
+                attempted = True
+
             try:
                 with self.sent_state(*updates):
                     try:
                         if save and action.save_delay_ms:
                             await self._wait(action.save_delay_ms, cancel)
                         elapsed = 0
-                        if held and not leased and duration_ms < TICK_MS:
+                        if held and not leased and duration_ms < self._tick_ms:
                             await self._wait(duration_ms, cancel)
                             note_frame_skipped()
                             return
@@ -540,11 +573,11 @@ class DreamSenseController(BedController):
                                     note_frame_skipped()
                                     break
                                 delay = (
-                                    TICK_MS
+                                    self._tick_ms
                                     if not elapsed or self._last_write is None
                                     else max(
                                         0,
-                                        TICK_MS - (monotonic() - self._last_write) * 1000,
+                                        self._tick_ms - (monotonic() - self._last_write) * 1000,
                                     )
                                 )
                                 if sent and not leased:
@@ -553,7 +586,7 @@ class DreamSenseController(BedController):
                                         max(0, (deadline - monotonic()) * 1000),
                                     )
                                 await self._wait(round(delay), cancel)
-                                elapsed += TICK_MS
+                                elapsed += self._tick_ms
                                 if local.is_set():
                                     note_frame_skipped()
                                     break
@@ -562,6 +595,7 @@ class DreamSenseController(BedController):
                                 packet,
                                 cancel,
                                 on_write=wrote,
+                                on_attempt=admitted,
                                 # The first source tick waits 100 ms, including
                                 # timer jitter. The deadline suppresses repeats.
                                 not_after=deadline if held and not leased and sent else None,
@@ -576,7 +610,7 @@ class DreamSenseController(BedController):
                         raise
             finally:
                 try:
-                    if sent and action.release and not save:
+                    if (sent or self._cleanup_after_attempt and attempted) and action.release and not save:
                         await self._release(session, side)
                 finally:
                     self._active_action = False
@@ -875,7 +909,7 @@ class DreamSenseController(BedController):
             await self._send(frame, self._coordinator.cancel_command if own else None, own=own)
             if i + 1 < len(frames):
                 try:
-                    await self._wait(TICK_MS, self._coordinator.cancel_command if own else None)
+                    await self._wait(self._tick_ms, self._coordinator.cancel_command if own else None)
                 except asyncio.CancelledError:
                     if own:
                         note_frame_skipped()
@@ -1023,7 +1057,7 @@ class DreamSenseController(BedController):
                     await self._send(frame, self._coordinator.cancel_command, validate=guard)
                     if i + 1 < len(frames):
                         try:
-                            await self._wait(TICK_MS, self._coordinator.cancel_command)
+                            await self._wait(self._tick_ms, self._coordinator.cancel_command)
                         except asyncio.CancelledError:
                             note_frame_skipped()
                             raise

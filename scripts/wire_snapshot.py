@@ -478,6 +478,13 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
+    if controller._coordinator.bed_type == "konfurt":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        for enabled, wake in ((False, "none"), (True, "none"), (True, "massage"), (True, "memory_1")):
+            alarm = AlarmRequest(enabled=enabled, hour=7, minute=30, wake_action=wake,
+                                 reference_time=datetime.datetime.fromisoformat(FROZEN_NOW))
+            plan.append(Command(f"set_alarm:{enabled}:{wake}", _method("configure_alarm", alarm), True))
     if controller._coordinator.bed_type == "suta_king_koil":
         async def active_massage_mode(ctrl: Any, option: str) -> None:
             # SUTA's mode is admitted only after enabling a zone. Record that
@@ -1527,6 +1534,9 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="remote",
                         entry_data={"protocol_variant": "remote", "product_type": "old_dsp_normal", "ergosportive_controls": list(CONTROLS)},
                         layout_id="ergosportive")
+    if bed_type == "avek":
+        return Scenario(id=bed_type, bed_type=bed_type,
+            replies={"6e400003-b5a3-f393-e0a9-e50e24dcca9e": "b0020101b4"})
     if bed_type == "intellibed":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="old")
     if bed_type == "active_sleep":
@@ -1596,6 +1606,9 @@ def default_scenario(bed_type: str) -> Scenario:
             "write:5500000018": "55000000180102",
             "write:5500000032": "5500000032080001010300080000",
         })
+    if bed_type == "mattresspoint":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="BOX2422",
+                        layout_id="mattresspoint")
     if bed_type == const.BED_TYPE_SLEEPTIME:
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="205",
@@ -1667,6 +1680,11 @@ def default_scenario(bed_type: str) -> Scenario:
             "write:f1f14507a200": "f2f24507a164ff0080012cfd7e",
             "write:f1f1440da200": "f2f2440da164ff00003200ff00190000ff9e7e",
         })
+    if bed_type == "flexx_motion":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="PB450",
+                        entry_data={"bed_type": bed_type, "protocol_variant": "PB450"},
+                        layout_id="dreamsense:gatt:1",
+                        replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"})
     if bed_type == "awmotion":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="SN300",
                         entry_data={"bed_type": bed_type, "protocol_variant": "SN300"},
@@ -1683,6 +1701,8 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
                         layout_id="bedtech")
+    if bed_type == "konfurt":
+        return Scenario(id="konfurt", bed_type="konfurt", protocol_variant="2", layout_id="konfurt")
     if bed_type == "askona":
         return Scenario(id="askona", bed_type="askona", protocol_variant="633", layout_id="askona",
                         replies={"0000ffe4-0000-1000-8000-00805f9b34fb": "0000000044002c030634120000400000"})
@@ -2220,6 +2240,12 @@ def route_scenarios() -> list[Scenario]:
             scenarios.append(dataclasses.replace(default_scenario("scott_living"),
                 id=f"scott_living:{layout}{suffix}", layout_id="scott_living", properties=properties,
                 entry_data={"product_type": layout, "ble_device_name": "base00000000"}))
+    for layout in ("2", "3", "4"):
+        for suffix, properties in (("", None), (":write", WRITE_ONLY), (":no_response", NO_RESPONSE_ONLY)):
+            if layout == "2" and not suffix:
+                continue  # The default captures the app's initial two-motor layout.
+            scenarios.append(Scenario(id=f"konfurt:{layout}{suffix}", bed_type="konfurt",
+                protocol_variant=layout, layout_id="konfurt", properties=properties))
     scenarios.append(dataclasses.replace(default_scenario("ergosportive"), id="ergosportive:hardware221", protocol_variant="hardware221", entry_data={**default_scenario("ergosportive").entry_data, "protocol_variant": "hardware221"}, layout_id="ergosportive"))
     scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
     scenarios.append(Scenario(id="junasleep:b", bed_type="junasleep", protocol_variant="b",
@@ -2800,6 +2826,11 @@ def build_scenarios() -> list[Scenario]:
         entry_data={"product_type": "head_foot", "has_light": True, "has_massage": True},
     ))
     scenarios.extend(
+        dataclasses.replace(default_scenario("mattresspoint"), id=f"mattresspoint:{box}",
+                            protocol_variant=box)
+        for box in ("BOX2422", "BOX2442")
+    )
+    scenarios.extend(
         dataclasses.replace(default_scenario("sleeptime"), id=f"sleeptime:{selector}",
                             protocol_variant=selector)
         for selector in ("402", "404", "405")
@@ -2832,6 +2863,15 @@ def build_scenarios() -> list[Scenario]:
             replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00017d"},
         ))
 
+    from custom_components.adjustable_bed.profiles.flexx_motion import PROFILES as FLEXX_PROFILES
+    for product in FLEXX_PROFILES:
+        for route in (0, 1):
+            scenarios.append(replace(default_scenario("flexx_motion"),
+                id=f"flexx_motion:{product}:gatt:{route}", protocol_variant=product,
+                entry_data={"bed_type": "flexx_motion", "protocol_variant": product},
+                layout_id="dreamsense" if route == 0 else "dreamsense:gatt:1",
+                replies={"write:01": "6e09010078 6e0e00037f"} if route == 0 else
+                        {"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"}))
     # AW MOTION: each offered product and each accepted live GATT route.
     for product in ("SN300", "SN500", "HC800"):
         for route in range(6):
@@ -3030,7 +3070,7 @@ async def _build(scenario: Scenario, client: Any) -> Any:
     coordinator.client = client
     if scenario.bed_type == "junasleep":
         coordinator.ble_device_name = scenario.entry_data["ble_device_name"]
-    if scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest":
+    if scenario.bed_type == "konfurt" or (scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest"):
         # New profile gates are driven by its scripted notifications, not by
         # invented initial state. Keep all pre-existing scenarios unchanged.
         from custom_components.adjustable_bed.controller_state import StateUpdate
@@ -3074,6 +3114,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         **scenario.factory_kwargs,
     )
     coordinator.controller = controller
+    if scenario.bed_type == "avek":
+        controller.restore_persisted_app_state({"app_id": "001122334455"})
     return controller
 
 
@@ -3132,7 +3174,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_read_device_info(session)
             return
-        if controller._coordinator.bed_type in {"shuda", "sleeptime", "dreamotion_smart"}:
+        if controller._coordinator.bed_type in {"shuda", "sleeptime", "mattresspoint", "dreamotion_smart"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"amada", "meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue", "ifit"}:
@@ -3258,6 +3300,13 @@ async def _capture(
             # virtual clock reaches their movement deadlines at the same times.
             plan.sort(key=lambda command: command.name in {"lights_on", "lights_off"})
         for command in plan:
+            if scenario.bed_type == "konfurt":
+                # Source-derived status16 admits the app's report-backed toggles.
+                # A new report is supplied for each independent action.
+                status = ("edfe0000000000000000000000000000" if command.name.endswith("=on")
+                          or command.name == "lights_on" else "edfe0000000000050400000000023200")
+                for target, callback in controller.client._subscribers:
+                    callback(target, bytearray.fromhex(status))
             if scenario.bed_type == "flexispot":
                 # An unsolicited, source-derived complete settings report before
                 # each action admits read/modify/write without guessing state.
@@ -3330,7 +3379,17 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
             try:
                 layout = layouts[scenario.layout_id or scenario.id]
                 if scenario.properties is not None:
-                    properties = {**layout.get("properties", {}), "*": list(scenario.properties)}
+                    if scenario.bed_type == "konfurt":
+                        from custom_components.adjustable_bed.profiles.konfurt import WRITE
+
+                        # This layout has explicit per-characteristic roles, which
+                        # take precedence over a default. Keep the notify role.
+                        properties = {**layout.get("properties", {}), WRITE: [
+                            prop for prop in scenario.properties
+                            if prop in ("write", "write-without-response")
+                        ]}
+                    else:
+                        properties = {**layout.get("properties", {}), "*": list(scenario.properties)}
                     layout = {**layout, "properties": properties}
                 result[scenario.id] = await capture_scenario(scenario, layout, frozen)
             except Exception as err:  # noqa: BLE001 - a scenario that cannot build is data too

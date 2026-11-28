@@ -118,10 +118,12 @@ from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.enso2 import LAYOUT_CHOICES as ENSO2_LAYOUT_CHOICES
 from .profiles.ergosportive import VARIANTS as ERGOSPORTIVE_CHOICES
+from .profiles.flexx_motion import CHOICES as FLEXX_CHOICES
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.instant_comfort import ROUTES as INSTANT_COMFORT_ROUTES
 from .profiles.junasleep import CHOICES as JUNASLEEP_CHOICES
 from .profiles.kingkoil import CHOICES as KINGKOIL_CHOICES
+from .profiles.konfurt import CHOICES as KONFURT_CHOICES
 from .profiles.leva import RECEIVERS as LEVA_RECEIVERS
 from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
@@ -189,11 +191,13 @@ MLINE_PROTOCOL_LABELS: Final = {
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "flexx_motion": FLEXX_CHOICES,
     "askona": ASKONA_MODELS,
     "intellibed": {"old": "Old / white remote", "hhc": "HHC / silver remote"},
     BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,
     "berun": {key: f"Version {profile.version}" for key, profile in BERUN_PROFILES.items()},
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
+    "mattresspoint": {"BOX2422": "BOX2422", "BOX2442": "BOX2442"},
     BED_TYPE_PURELY_SLEEP: dict(PURELY_SLEEP_PRODUCTS),
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),
@@ -259,6 +263,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
     BED_TYPE_RESTONIC: RESTONIC_BRANCHES,
+    "konfurt": KONFURT_CHOICES,
     "ergosportive": ERGOSPORTIVE_CHOICES,
     "kingkoil": KINGKOIL_CHOICES,
     BED_TYPE_JUNASLEEP: JUNASLEEP_CHOICES,

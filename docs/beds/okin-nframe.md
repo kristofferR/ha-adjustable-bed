@@ -103,6 +103,7 @@ Customatic app profiles.
 | ✅ | Shuda 1.0.6 (19) | `com.okin.shuda` | [Shuda](#shuda) |
 | ✅ | [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38) | `com.okin.simmonskorea` | [N32 Motion Bed](#n32-motion-bed) |
 | ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1) | `com.okin.resident.release` | [Resident Adjustable Base](#resident-adjustable-base) |
+| Partial | MattressPoint 1.0.3 (5) | `com.okin.MattressPoint` | [MattressPoint](#mattresspoint) |
 | ✅ | Sleeptime Australia 1.0.1 (2) | `com.okin.sleeptime` | [Sleeptime](#sleeptime) |
 | ✅ | [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5) | `com.okin.ultramaticSmartBed` | [Ultramatic Smart Bed](#ultramatic-smart-bed) |
 | ✅ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33) | `com.okin.bedding.adjustbed` | [Adjustable bed app](#adjustable-bed-app) |
@@ -302,6 +303,8 @@ are unchanged.
 | Shuda | `shuda` | `shuda` | 40-bit | plain frame | with response | back, legs | 1 |
 | Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
 | Ultramatic Smart Bed | `ultramatic_smart_bed` | `ultramatic_smart_bed` | 40-bit | plain frame | without response | head, foot, headtilt, lumbar, hips | 2 |
+| MattressPoint BOX2422 | `mattresspoint:BOX2422` | `mattresspoint` | 40-bit | plain frame | without response | back, legs, both | 0 |
+| MattressPoint BOX2442 | `mattresspoint:BOX2442` | `mattresspoint` | 40-bit | plain frame | without response | back, legs, both, head_tilt, lumbar | 0 |
 | Sleeptime | `sleeptime` | `sleeptime` | 40-bit | plain frame | without response | per selector | 2 |
 | OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
 | OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
@@ -374,6 +377,8 @@ are unchanged.
 | Shuda | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 | Ultramatic Smart Bed | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| MattressPoint BOX2422 | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after release or cancellation |
+| MattressPoint BOX2442 | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after release or cancellation |
 | Sleeptime | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after release or cancellation |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
@@ -448,6 +453,8 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Shuda | once, 1 STOP | once, 1 STOP | 28 × 200 ms, 1 STOP | n/a | once, 1 STOP | n/a |
 | Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | Ultramatic Smart Bed | held recall | held M1/M2 | same frame, bounded save hold | n/a | one-shot, see profile | n/a |
+| MattressPoint BOX2422 | n/a | n/a | n/a | n/a | n/a | n/a |
+| MattressPoint BOX2442 | n/a | n/a | n/a | n/a | n/a | n/a |
 | Sleeptime | held recall | held M1/M2 | same frame, bounded save hold | n/a | one-shot, see profile | n/a |
 | OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
@@ -7054,6 +7061,116 @@ unverified on hardware. The unsafe spoken Stop route is not used: HA sends
 the zero release instead of the app's head-up pulse. Android speech and
 companion UI, network/cloud/account services and firmware updating are
 outside the direct-bed controls.
+
+### MattressPoint
+
+**Status:** Not yet tested on hardware. Motor, light, massage and local alarm maintenance controls are available.
+
+**App:** MattressPoint 1.0.3 (5), `com.okin.MattressPoint`.
+
+#### Known Models
+
+BOX2422 and BOX2442, with Bluetooth platform names starting with `SmartBed`.
+
+#### Features
+
+Back, legs and combined back/legs movement; BOX2442 also offers head tilt and
+lumbar. Lighting is a toggle. Massage has start, off, zone strength steps,
+wave steps and a timer-cycle button. The alarm can be disabled or queried,
+and the bed clock can be synchronized. No position feedback is available.
+
+Preset recall, save and reset controls are unavailable while their model-specific
+gestures remain unresolved. Alarm programming choices, massage level limits and
+absolute timer selections are also unavailable.
+
+#### Detection / Setup
+
+Select the **MattressPoint app**, then select **BOX2422** or **BOX2442** to match
+your app. Shared names and Nordic UART services only suggest an app choice.
+Setup checks the exact Nordic UART service, a write-without-response
+characteristic and a notification or indication characteristic. An offline setup
+can be saved; commands still require the actual channels before any control write.
+Two separate Bluetooth receivers may be paired using Home Assistant's standard
+paired-bed setup. Single-address left/right addressing is unavailable.
+
+#### Commands
+
+<!-- generated:mattresspoint-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Box | Motor controls |
+|---|---|
+| BOX2422 | back, legs, both |
+| BOX2442 | back, legs, both, head_tilt, lumbar |
+
+| Action | Frame |
+|---|---|
+| back up | `05 02 00 00 00 01 00` |
+| back down | `05 02 00 00 00 02 00` |
+| legs up | `05 02 00 00 00 04 00` |
+| legs down | `05 02 00 00 00 08 00` |
+| both up | `05 02 00 00 00 05 00` |
+| both down | `05 02 00 00 00 0A 00` |
+| head_tilt up | `05 02 00 00 00 10 00` |
+| head_tilt down | `05 02 00 00 00 20 00` |
+| lumbar up | `05 02 00 00 00 40 00` |
+| lumbar down | `05 02 00 00 00 80 00` |
+| STOP | `05 02 00 00 00 00 00` |
+| Light toggle | `05 02 00 02 00 00 00` |
+| Massage on | `05 02 00 00 01 00 00` |
+| Massage off | `05 02 02 00 00 00 00` |
+| Massage timer | `05 02 00 00 02 00 00` |
+| Massage head_up | `05 02 00 00 08 00 00` |
+| Massage head_down | `05 02 00 80 00 00 00` |
+| Massage foot_up | `05 02 00 00 04 00 00` |
+| Massage foot_down | `05 02 01 00 00 00 00` |
+| Massage wave_up | `05 02 10 00 00 00 00` |
+| Massage wave_down | `05 02 04 00 00 00 00` |
+| Massage query | `00 B0` |
+| Alarm query | `00 C0` |
+| Disable alarm | `07 05 00 00 00 00 00 00 00` |
+
+| Operation | Timing |
+|---|---|
+| Held movement | Immediate, then every 300 ms until release |
+| Release | STOP after 100 ms |
+| Clock sync | On connect after 200 ms; manual sync also available; writes at (0, 500) ms |
+| Alarm disable | Immutable writes at (0, 300, 600) ms |
+| Alarm query | Writes at (0, 200) ms |
+| Massage and light controls | One write; no unproven delayed refresh |
+<!-- /generated -->
+
+#### Position Feedback / Notifications
+
+The single-record parser accepts complete `A5 0B 0E` massage and `A5 0C 0E` or
+`ED 80 03` alarm reports. Short matching records are rejected. The app's special
+20-byte `FE 16` chunk buffering does not establish a general fragment protocol.
+Raw remaining-time, mode and zone fields stay in diagnostics, because their
+complete user-facing ranges are not yet established. Alarm enabled status uses
+the reported enable field; newer reports take priority over last-sent intent.
+
+#### Command Timing
+
+A held command sends immediate and 300 ms refreshes, followed by the proven zero
+STOP after 100 ms. Cancelled commands finish an already submitted write and send
+STOP on the original physical link. The app also has an optional 200 ms UI delay
+before requesting STOP; HA releases promptly without reproducing that gesture delay.
+No hardware watchdog is assumed. The app's delayed writes read a shared mutable
+command field. HA retains each immutable payload under its serialized command
+operation, so a query or later movement cannot replace a pending STOP or retry.
+
+#### Notes
+
+Alarm enabled and massage active state can reflect a last-sent command until a
+new report arrives. A partially delivered operation makes its intended state
+unknown. Disconnect and replacement sessions invalidate those values.
+
+#### Analysis provenance
+
+Based on the bounded partial analysis of MattressPoint 1.0.3 (5).
+The 37 literal and synthetic examples are checked in
+`tests/fixtures/mattresspoint_vectors.json` and `tests/test_mattresspoint.py`.
+Hardware behavior and complete advanced-feature coverage remain unverified.
 
 ### Amada Smart
 

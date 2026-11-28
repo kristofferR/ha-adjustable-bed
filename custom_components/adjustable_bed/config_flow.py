@@ -461,7 +461,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {
-        "ergosportive", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+        "ergosportive", "avek", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "flexx_motion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
      BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO, BED_TYPE_AMBIENT, "silksnow", BED_TYPE_MOTIONFLEX}
 )
@@ -558,6 +558,9 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
     "check_no_commands": (
         "⚠️ The device connected but accepts no commands. It may not be your bed's "
         "controller. Check that you chose the right device."
+    ),
+    "check_mattresspoint_uart_missing": (
+        "❌ The Bluetooth device lacks the write-without-response and status channels MattressPoint needs."
     ),
     "check_sleeptime_uart_missing": (
         "❌ The Bluetooth device lacks the write and status channels Sleeptime needs."
@@ -1475,6 +1478,11 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
+    if bed_type == "flexx_motion":
+        from .profiles.flexx_motion import PROFILES as FLEXX_PROFILES
+
+        profile = FLEXX_PROFILES.get(protocol_variant)
+        return [profile.motor_count] if profile is not None else [2]
     if bed_type == BED_TYPE_ALYA:
         return [int(protocol_variant.rsplit("_", 1)[-1])] if protocol_variant in ALYA_LAYOUTS else [2]
     if bed_type == "relax_motion":
@@ -2434,10 +2442,13 @@ class CapabilityReport:
     atlas_lift_transport_valid: bool | None = None
     topcare_transport_valid: bool | None = None
     comfort_bed_transport_valid: bool | None = None
+    flexx_motion_transport_valid: bool | None = None
     langjue_receiver_valid: bool | None = None
+    mattresspoint_uart_valid: bool | None = None
     sleeptime_uart_valid: bool | None = None
     ambient_transport_valid: bool | None = None
     vindo_transport_valid: bool | None = None
+    konfurt_transport_valid: bool | None = None
     kingkoil_transport_valid: bool | None = None
     scott_living_transport_valid: bool | None = None
     starcode_transport_selector: str | None = None
@@ -2771,7 +2782,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
-        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "ergosportive", "kingkoil", "scott_living"):
+        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "ergosportive", "kingkoil", "konfurt", "scott_living", "flexx_motion"):
             return True
         if self._migration_family is None:
             return False
@@ -2780,12 +2791,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
         """Run the staged route's family check on the candidate link."""
         self._migration_preview = {}
+        if data.get(CONF_BED_TYPE) == "flexx_motion":
+            from .beds.dreamsense.flexx_motion import select_link as select_flexx_link
+
+            select_flexx_link(client)
+            return
+
         if data.get(CONF_BED_TYPE) == "scott_living":
             from .beds.scott_living import select_roles
 
             select_roles(client)
             return
 
+        if data.get(CONF_BED_TYPE) == "konfurt":
+            from .beds.keeson.konfurt import select_link as select_konfurt_link
+
+            select_konfurt_link(client)
         if data.get(CONF_BED_TYPE) == "ergosportive":
             from .beds.keeson.ergosportive import select_link as select_ergosportive_link
 
@@ -2805,8 +2826,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     async def _async_import_endpoint_check(self, data: Mapping[str, Any]) -> None:
         """Import what the staged route's family check reads, off the event loop."""
+        if data.get(CONF_BED_TYPE) == "flexx_motion":
+            await async_import_modules(self.hass, "beds.dreamsense.flexx_motion")
         if data.get(CONF_BED_TYPE) == "scott_living":
             await async_import_modules(self.hass, "beds.scott_living")
+        if data.get(CONF_BED_TYPE) == "konfurt":
+            await async_import_modules(self.hass, "beds.keeson.konfurt")
         if data.get(CONF_BED_TYPE) == "ergosportive":
             await async_import_modules(self.hass, "beds.keeson.ergosportive")
         if data.get(CONF_BED_TYPE) == "kingkoil":
@@ -6762,13 +6787,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             or report.alya_transport_valid is False
             or report.starcode_transport_valid is False
             or report.truemotion_transport_valid is False
-            or ((report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False)
+            or ((report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False or report.flexx_motion_transport_valid is False)
             or report.langjue_receiver_valid is False
             or (
                 self._migration is not None
                 and self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_LANGJUE
                 and report.langjue_receiver_valid is not True
             )
+            or report.mattresspoint_uart_valid is False
             or report.sleeptime_uart_valid is False
             or (
                 self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_AMBIENT
@@ -7085,6 +7111,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             ):
                                 writable += 1
                     report.writable_count = writable
+                    if bed_type == "flexx_motion":
+                        await async_import_modules(self.hass, "beds.dreamsense.flexx_motion")
+                        from .beds.dreamsense.flexx_motion import select_link as select_flexx_link
+
+                        report.flexx_motion_transport_valid = False
+                        select_flexx_link(client)
+                        report.flexx_motion_transport_valid = True
+                        return report
                     if bed_type == "scott_living":
                         await async_import_modules(self.hass, "beds.scott_living")
                         from .beds.scott_living import select_roles
@@ -7092,6 +7126,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         report.scott_living_transport_valid = False
                         select_roles(client)
                         report.scott_living_transport_valid = True
+                        return report
+                    if bed_type == "konfurt":
+                        await async_import_modules(self.hass, "beds.keeson.konfurt")
+                        from .beds.keeson.konfurt import select_link as select_konfurt_link
+
+                        report.konfurt_transport_valid = False
+                        select_konfurt_link(client)
+                        report.konfurt_transport_valid = True
                         return report
                     if bed_type == "ergosportive":
                         await async_import_modules(self.hass, "beds.keeson.ergosportive")
@@ -7135,6 +7177,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             report.error = str(error)
                         else:
                             report.atlas_lift_transport_valid = True
+                        return report
+                    if bed_type == "mattresspoint":
+                        if report.connected and services:
+                            await async_import_modules(self.hass, "beds.uart_roles")
+                            from .beds.uart_roles import gatt_roles
+                            from .errors import BedNotConnectedError
+
+                            report.mattresspoint_uart_valid = gatt_roles(service_table) is not None
+                            if not report.mattresspoint_uart_valid:
+                                report.error = str(BedNotConnectedError("mattresspoint_gatt"))
                         return report
                     if bed_type == "topcare" and report.connected:
                         await async_import_modules(self.hass, "beds.richmat.topcare")
@@ -7267,7 +7319,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:
             if migration_check is not None or bed_type in (
-                BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO, "ergosportive", "kingkoil",
+                BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO, "ergosportive", "kingkoil", "konfurt",
             ):
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
@@ -7338,6 +7390,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if not report.writable_count:
             lines.append(await line("check_no_commands"))
 
+        if report.mattresspoint_uart_valid is False:
+            lines.append(await line("check_mattresspoint_uart_missing"))
         if report.sleeptime_uart_valid is False:
             lines.append(await line("check_sleeptime_uart_missing"))
         if report.truemotion_transport_valid is False:
@@ -7348,6 +7402,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             lines.append(await line("check_atlas_lift_transport_missing"))
         if report.comfort_bed_transport_valid is False:
             lines.append(await line("check_comfort_bed_transport_missing"))
+        if report.flexx_motion_transport_valid is False:
+            lines.append(await line("check_transport_missing"))
         if report.alya_transport_valid is False:
             lines.append(await line("check_transport_missing"))
         if report.starcode_transport_valid is False:
@@ -7358,6 +7414,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             or report.atlas_lift_transport_valid is True
             or report.topcare_transport_valid is True
             or report.comfort_bed_transport_valid is True
+            or report.flexx_motion_transport_valid is True
         ):
             lines.append(await line("check_transport_ok"))
 
@@ -7498,7 +7555,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._verify_form_shown = False
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
-            if (((report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False) and user_input.get("action") == "change_app":
+            if (((report.konfurt_transport_valid is False or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False or report.flexx_motion_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False) and user_input.get("action") == "change_app":
                 self._verify_form_shown = False
                 self._operation = None
                 if self._discovery_info is None:
@@ -7507,10 +7564,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if (
             user_input is not None
             and self._verify_form_shown
-            and ((report.atlas_lift_transport_valid is not False and report.topcare_transport_valid is not False) and report.comfort_bed_transport_valid is not False)
+            and ((report.atlas_lift_transport_valid is not False and report.topcare_transport_valid is not False) and report.comfort_bed_transport_valid is not False and report.flexx_motion_transport_valid is not False)
+            and report.konfurt_transport_valid is not False
             and report.kingkoil_transport_valid is not False
             and report.scott_living_transport_valid is not False
         ):
+            if report.mattresspoint_uart_valid is False:
+                self._verify_form_shown = False
+                self._manual_data = dict(self._pending_entry)
+                self._recheck_answers = True
+                profile = setup_profile_for(self._manual_data)
+                assert profile is not None
+                return self._show_profile_questions(
+                    profile, self._manual_data, {CONF_PROTOCOL_VARIANT: "mattresspoint_gatt"}
+                )
             if report.sleeptime_uart_valid is False:
                 self._verify_form_shown = False
                 self._manual_data = dict(self._pending_entry)
@@ -7555,7 +7622,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_show_form(step_id="retry_roomi_receiver")
 
         schema: dict[vol.Marker, Any] = {}
-        if ((report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False:
+        if ((report.konfurt_transport_valid is False or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False or report.flexx_motion_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False:
             schema[vol.Required("action", default="retry")] = SelectSelector(
                 SelectSelectorConfig(
                     options=["retry", "change_app"],

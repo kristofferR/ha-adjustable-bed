@@ -575,6 +575,7 @@ def _quiet_routes() -> list[tuple[str, str]]:
 
 async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(hass):
     from custom_components.adjustable_bed.beds.base import BedController
+    from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
     from tests.test_controller_contract import _create_controller_for_bed_type
 
     found = set()
@@ -582,6 +583,11 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
         controller = await _create_controller_for_bed_type(bed_type)
         if bed_type in (const.BED_TYPE_RESTONIC, const.BED_TYPE_JUNASLEEP):
             # Both inherit Keeson's no-op reader without reporting positions.
+            assert not any(bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type))
+            continue
+        if bed_type == const.BED_TYPE_KONFURT:
+            # KONFURT inherits Keeson's no-op; none of its layouts reports positions.
+            assert type(controller).read_positions is KeesonController.read_positions
             assert not any(bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type))
             continue
         if type(controller).read_positions is not BedController.read_positions and any(

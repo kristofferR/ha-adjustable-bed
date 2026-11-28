@@ -310,6 +310,8 @@ from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOT
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
 from .profiles.dreamsense import CHOICES as DREAMSENSE_CHOICES
 from .profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
+from .profiles.flexx_motion import CHOICES as FLEXX_CHOICES
+from .profiles.flexx_motion import PROFILES as FLEXX_PROFILES
 from .profiles.jerome_adjustable_base import PRODUCT_CHOICES as JEROME_ADJUSTABLE_BASE_PRODUCTS
 from .profiles.likimio import ABM10 as LIKIMIO_ABM10
 from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
@@ -389,6 +391,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "ai_bed": GENERIC_FIELDS,
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "mattresspoint": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "powersbedding": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hestia_motion": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "truemotion": GENERIC_FIELDS,
@@ -397,6 +400,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_RESTONIC: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "konfurt": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "ergosportive": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "kingkoil": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JUNASLEEP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -414,6 +418,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_LIKIMIO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "dreamotion_smart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "flexx_motion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "awmotion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "muuegm": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2466,6 +2471,16 @@ def _restonic_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
             CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200}
 
 
+def _konfurt_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.konfurt import LAYOUTS
+
+    layout = LAYOUTS.get(data.get(CONF_PROTOCOL_VARIANT, ""))
+    return {} if layout is None else {
+        CONF_MOTOR_COUNT: len(layout.axes), CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300,
+    }
+
+
 def _ergosportive_validate(data: Mapping[str, Any]) -> dict[str, str]:
     try:
         ergosportive_app.selected(data)
@@ -3580,6 +3595,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PRODUCT_TYPE, RESTONIC_LAYOUTS), Question(CONF_PROTOCOL_VARIANT, RESTONIC_BRANCHES)),
         derive=_restonic_settings,
     ),
+    "konfurt": _asking("konfurt", questions=(Question(CONF_PROTOCOL_VARIANT, _routes("konfurt")),),
+                        derive=_konfurt_settings),
     "ergosportive": _asking(
         "ergosportive",
         questions=(Question(CONF_PROTOCOL_VARIANT, ergosportive_app.VARIANTS),
@@ -3645,6 +3662,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "MUUEGM",
     ),
     # The app's product sets every control, so its one row asks it.
+    "flexx_motion": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, FLEXX_CHOICES, REQUIRED, searchable=True),),
+        derive=lambda data: {
+            CONF_MOTOR_COUNT: FLEXX_PROFILES[str(data[CONF_PROTOCOL_VARIANT])].motor_count,
+            CONF_HAS_MASSAGE: any(a.action.startswith("Massage") for a in FLEXX_PROFILES[str(data[CONF_PROTOCOL_VARIANT])].controls),
+        },
+        title=lambda _data: "Flexx Motion",
+    ),
     "awmotion": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
@@ -4138,6 +4165,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PRODUCT_TYPE, okimattmotion_app.LAYOUTS, okimattmotion_app.DEFAULT_LAYOUT,
         ),),
     ),
+    "avek": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Compatibility field; firmness buttons declare the controls.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 90,
+        },
+    ),
     "ifit": SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 3,
@@ -4291,6 +4327,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_sleeptime_seed,
         title=lambda _data: "Sleeptime Australia",
         imports=("profiles.sleeptime",),
+    ),
+    "mattresspoint": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_PROTOCOL_VARIANT,
+                            lambda _data: {"BOX2422": "BOX2422", "BOX2442": "BOX2442"},
+                            lambda _data: vol.UNDEFINED),),
+        title=lambda _data: "MattressPoint control box",
     ),
     "powersbedding": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
