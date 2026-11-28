@@ -4844,6 +4844,31 @@ suta_king_koil_confirm_alarm:
           max: 59
           mode: box
 
+ifit_save_preset:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    preset:
+      required: true
+      selector:
+        select:
+          options:
+            - zero_g
+            - anti_snore
+            - lounge
+            - incline
+    side:
+      selector:
+        select:
+          options:
+            - left
+            - right
+            - both
+
 thrivesleep:
   fields:
     device_id:

@@ -35,6 +35,7 @@ _CREDENTIAL_KEYS = {
     CONF_OCTO_PIN,
     CONF_PAIRLINK_PASSWORD_HEX,
     CONF_PAIRLINK_PASSWORD_TEXT,
+    "active_sleep_auth_id",
     "ergobq_stamp",
     "ergobq_serial",
     "octo_pin_confirmation",

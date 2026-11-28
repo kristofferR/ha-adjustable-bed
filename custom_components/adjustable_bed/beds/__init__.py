@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from .base import BedController
 
 if TYPE_CHECKING:
+    from .active_sleep.controller import ActiveSleepController as ActiveSleepController
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
@@ -61,6 +62,7 @@ if TYPE_CHECKING:
     from .goodvibe.controller import GoodVibeController as GoodVibeController
     from .hestia.controller import HestiaController as HestiaController
     from .hjbed.controller import HJBedController as HJBedController
+    from .ifit.controller import IfitController as IfitController
     from .innova import InnovaController as InnovaController
     from .instant_comfort.controller import InstantComfortBase as InstantComfortBase
     from .isleep import IsleepController as IsleepController
@@ -279,6 +281,7 @@ _EXPORT_MODULES = {
     "AdjustableLumbarController": "adjustable_lumbar",
     "PersonalComfortBase": "personal_comfort.controller",
     "PersonalComfortAir": "personal_comfort.air",
+    "ActiveSleepController": "active_sleep.controller",
     "ParamountController": "paramount.controller",
     "AdjustableBedAppController": "adjustable_lumbar",
     "BedJetPowerLayerController": "bedjet_powerlayer",
