@@ -378,6 +378,7 @@ async def test_paired_hold_preflights_both_layouts_before_either_write(hass, mon
     pair, left, right = _pair([])
     controls = []
     for child, layout in ((left, "4"), (right, "2")):
+        child.bed_type = const.BED_TYPE_KONFURT
         controller = bed.KonfurtController(_FactoryCoordinator(), variant=layout)
         controls.append(controller)
         controller.hold_control = AsyncMock()

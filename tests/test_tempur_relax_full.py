@@ -295,7 +295,8 @@ async def test_forgetting_alarm_favorite_clears_only_after_local_save(hass):
     await hass.services.async_call(const.DOMAIN, 'forget_memory', {
         'device_id': [device], 'preset': 2,
     }, blocking=True)
-    assert order == ['save', 'write']
+    assert order == ['save', 'write', 'save']
+    assert c.controller.persisted_app_state['pending_alarm_clear_slot'] is None
     assert frames(c.client) == ['40']
     assert c.controller.memory_slot_names[1] is None
     await shutdown(c)

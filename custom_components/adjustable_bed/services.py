@@ -594,6 +594,8 @@ def _primary_app_targets(
 ) -> list[tuple[BedTarget, str]]:
     """Honor the app profile's primary-owned actions without mirroring them."""
     def owns_primary(child: BedChild) -> bool:
+        if child.bed_type != BED_TYPE_LINAK:
+            return False
         if getattr(child, "entry", None) is None:
             return False
         route = profile_route(entry_profile_id(child.entry.data))
@@ -2232,18 +2234,17 @@ async def handle_rename(call: ServiceCall) -> None:
     preflighted = await _preflight_each(
         targets, preflight, require_live=lambda c: c.device_rename_needs_live_validation,
     )
-    for parent, side in targets:
-        for target in _command_targets(parent, side):
-            controller = target.capability_controller
-            if isinstance(controller, BedController):
-                await controller.prepare_device_rename(name)
-
     async def write_name(controller: BedController) -> None:
         await controller.rename_device(name)
 
     rename = live.command(targets, write_name)
 
     try:
+        for parent, side in targets:
+            for target in _command_targets(parent, side):
+                controller = target.capability_controller
+                if isinstance(controller, BedController):
+                    await controller.prepare_device_rename(name)
         for coordinator, side in targets:
             await _execute_sided_translated(
                 coordinator, side, rename, cancel_running=False, resource="configuration"

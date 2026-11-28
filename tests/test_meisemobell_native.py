@@ -24,6 +24,7 @@ ADDRESS = "AA:BB:CC:DD:AA:40"
 
 
 @pytest.mark.parametrize("route", p.PROFILES)
+@pytest.mark.freeze_time("2026-11-28 02:43:32")
 async def test_native_setup_entities_card_and_services(
     hass, mock_coordinator_connected, mock_bleak_client, enable_custom_integrations, route
 ):

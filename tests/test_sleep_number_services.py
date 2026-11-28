@@ -11,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.sleep_number import services
 from custom_components.adjustable_bed.beds.sleep_number.commands import SleepNumberActions
+from custom_components.adjustable_bed.const import BED_TYPE_SLEEP_NUMBER
 from tests.error_helpers import raises_key
 
 
@@ -142,7 +143,7 @@ async def test_registration_accepts_optional_response(hass):
 async def test_motion_preempts_and_single_result_is_named(hass):
     live = controller()
     live.sleep_number_command_names = ("position",)
-    target = SimpleNamespace(name="Bed", capability_controller=live)
+    target = SimpleNamespace(name="Bed", bed_type=BED_TYPE_SLEEP_NUMBER, capability_controller=live)
 
     async def execute(callback, **kwargs):
         assert kwargs["cancel_running"] is True
@@ -159,7 +160,7 @@ async def test_cancellation_releases_preflight_connections(hass):
     import asyncio
 
     live = controller()
-    target = SimpleNamespace(name="Bed", capability_controller=live)
+    target = SimpleNamespace(name="Bed", bed_type=BED_TYPE_SLEEP_NUMBER, capability_controller=live)
     with (
         patch.object(services, "_resolve_sided_targets", return_value=([(target, "both")], [])),
         patch.object(services, "_execute_sided", side_effect=asyncio.CancelledError),

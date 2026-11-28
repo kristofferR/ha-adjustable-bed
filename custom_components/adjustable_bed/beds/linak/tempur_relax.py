@@ -22,7 +22,13 @@ from ...codec.linak import (
     timer_info,
     timer_notification,
 )
-from ...command_scheduler import CommandContext, current_command_context, note_frame_skipped
+from ...command_scheduler import (
+    CommandContext,
+    Delivery,
+    current_command_context,
+    delivered,
+    note_frame_skipped,
+)
 from ...const import (
     LINAK_CONFIG_CHAR_UUID,
     LINAK_DEVICE_NAME_UUID,
@@ -314,8 +320,11 @@ class TempurRelaxController(LinakController):
             raise ValueError("Choose an available favorite")
         memories = dict(self._settings["memories"])
         memories.pop(str(slot), None)
-        clear = self._settings.get("alarm_enabled") and self._settings.get("alarm_favorite_slot") == slot
-        await self._remember(memories=memories, **({"alarm_enabled": False} if clear else {}))
+        clear = (self._settings.get("alarm_enabled") and self._settings.get("alarm_favorite_slot") == slot
+                 or self._settings.get("pending_alarm_clear_slot") == slot)
+        await self._remember(memories=memories, **(
+            {"alarm_enabled": False, "pending_alarm_clear_slot": slot} if clear else {}
+        ))
         if clear:
             await self._clear_timer_packet(self.client)
 
@@ -476,8 +485,16 @@ class TempurRelaxController(LinakController):
             raise AlarmError("alarm_needs_effect", "Choose a favorite or massage for the alarm")
 
     async def _clear_timer_packet(self, client: BleakClient | None) -> None:
-        with self.sent_state(ALARM_ENABLED(False)):
+        cleared = False
+
+        def show(delivery: Delivery) -> None:
+            nonlocal cleared
+            cleared = delivery is Delivery.SENT
+
+        with self.sent_state(ALARM_ENABLED(False)), delivered(show):
             await self._write_carpe(timer_channel_frame(clear=True), client, characteristic_uuid=LINAK_TIMER_CHAR_UUID)
+        if cleared and self._settings.get("pending_alarm_clear_slot") is not None:
+            await self._remember(pending_alarm_clear_slot=None)
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         await self.check_alarm(alarm)
@@ -503,7 +520,7 @@ class TempurRelaxController(LinakController):
         packets = (timer_event_frame(seconds, tuple(actions)), build_timer_recurrence(
             self._app_timing.alarm_recurrence_count, self._app_timing.alarm_recurrence_minutes
         ), timer_channel_frame())
-        await self._remember(alarm_enabled=True, alarm_visible=True,
+        await self._remember(alarm_enabled=True, alarm_visible=True, pending_alarm_clear_slot=None,
                              alarm_hour=alarm.hour, alarm_minute=alarm.minute,
                              alarm_favorite=alarm.wake_action != "none",
                              alarm_favorite_slot=int(alarm.wake_action[-1]) if alarm.wake_action != "none" else None)

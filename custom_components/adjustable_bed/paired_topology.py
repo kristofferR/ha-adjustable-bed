@@ -56,6 +56,7 @@ from .command_scheduler import (
     note_frame_skipped,
 )
 from .const import (
+    BED_TYPE_LINAK,
     PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_SIDES,
@@ -846,6 +847,8 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
         group_id = uuid4().hex
         child_by_side = dict(targets)
         def ordered(child: BedChild) -> bool:
+            if child.bed_type != BED_TYPE_LINAK:
+                return False
             if getattr(child, "entry", None) is None:
                 return False
             route = profile_route(entry_profile_id(child.entry.data))

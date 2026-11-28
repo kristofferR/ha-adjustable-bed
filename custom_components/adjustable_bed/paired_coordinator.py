@@ -49,6 +49,7 @@ from .const import (
     BED_TYPE_GMMOTOR,
     BED_TYPE_GOODVIBE,
     BED_TYPE_KEESON,
+    BED_TYPE_LINAK,
     BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_SLEEP_NUMBER,
@@ -542,6 +543,8 @@ class PairedBedCoordinator:
             return
         primary = self._children.get(SIDE_LEFT)
         right = self._children[SIDE_RIGHT]
+        if right.bed_type != BED_TYPE_LINAK:
+            return
         route = profile_route(entry_profile_id(right.entry.data)) if getattr(right, "entry", None) is not None else None
         policy = pair_profile(route.bed_type, route.variant) if route is not None else None
         if primary is not None and policy is not None and policy.ordered_pair and (
@@ -574,14 +577,14 @@ class PairedBedCoordinator:
             if not remacro_side_lacks_global_stop(child)
         ]
         self._cancel_before_stop(targets)
-        if not CONTROLLER_GESTURE_RELEASE.get():
-            await self._async_prepare_primary_flags(targets)
         command_targets = capture_command_targets(child for _, child in targets)
-        with command_target_scope(command_targets):
-            targets, admitted, errors = self._admit_sequential_stops(targets, ALL_COMMAND_RESOURCES)
 
         async def stop() -> dict[str, BaseException]:
+            nonlocal targets
+            if not CONTROLLER_GESTURE_RELEASE.get():
+                await self._async_prepare_primary_flags(targets)
             with command_target_scope(command_targets):
+                targets, admitted, errors = self._admit_sequential_stops(targets, ALL_COMMAND_RESOURCES)
                 await self._collect_admitted_stops(admitted, errors)
                 if targets:
                     async with self._connection_mode_transition_lock:
@@ -694,14 +697,14 @@ class PairedBedCoordinator:
         # Like an ordinary motor STOP, preempt any motion holding the writer.
         scope = command_resources("motor:*" if resource.startswith("motor:") else resource)
         self._cancel_before_stop(targets, scope)
-        if not CONTROLLER_GESTURE_RELEASE.get():
-            await self._async_prepare_primary_flags(targets)
         command_targets = capture_command_targets(child for _, child in targets)
-        with command_target_scope(command_targets):
-            targets, admitted, errors = self._admit_sequential_stops(targets, scope)
 
         async def stop() -> dict[str, BaseException]:
+            nonlocal targets
+            if not CONTROLLER_GESTURE_RELEASE.get():
+                await self._async_prepare_primary_flags(targets)
             with command_target_scope(command_targets):
+                targets, admitted, errors = self._admit_sequential_stops(targets, scope)
                 if active_stop is not None:
                     errors.update(await active_stop[1])
                 await self._collect_admitted_stops(admitted, errors)

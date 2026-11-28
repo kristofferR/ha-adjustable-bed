@@ -1,6 +1,7 @@
 """Full-review probes through native services, entities and paired reservations."""
 
 import asyncio
+import contextlib
 import json
 import subprocess
 import sys
@@ -12,7 +13,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockEntityPlatform
 
@@ -80,6 +81,33 @@ async def test_explicit_stop_reopens_released_td3_pair(hass):
     await pair.async_shutdown()
 
 
+@pytest.mark.parametrize('motor', [False, True])
+async def test_caller_cancellation_during_primary_stop_preparation_still_stops(hass, motor):
+    pair, left, right, _ = await paired_runtime(hass, mode='concurrent')
+    entered, finish = asyncio.Event(), asyncio.Event()
+    original = pair._async_prepare_primary_flags
+
+    async def prepare(targets):
+        entered.set()
+        await finish.wait()
+        await original(targets)
+
+    pair._async_prepare_primary_flags = prepare
+    task = asyncio.create_task(
+        pair.async_stop_motor(lambda ctrl: ctrl.stop_all(), 'motor:back', side='both')
+        if motor else pair.async_stop_command()
+    )
+    await entered.wait()
+    task.cancel()
+    await asyncio.sleep(0)
+    assert not task.done()
+    finish.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert frames(left.client) == frames(right.client) == ['ff00']
+    await pair.async_shutdown()
+
+
 @pytest.mark.parametrize('mode', ['concurrent', 'sequential'])
 @pytest.mark.parametrize('key,expected', [('preset_flat', '3400'), ('preset_both_up', '3700')])
 async def test_native_both_preset_selects_primary_td3_branch(hass, mode, key, expected):
@@ -136,6 +164,31 @@ async def test_public_rename_merges_concurrent_favorite_and_saves_both_names_bef
     await pair.async_shutdown()
 
 
+@pytest.mark.parametrize('cancel', [False, True])
+async def test_failed_rename_preparation_releases_every_preflighted_link(hass, cancel):
+    pair, left, right, device = await paired_runtime(hass, mode='concurrent')
+    released = []
+
+    async def preflight(targets, check, **kwargs):
+        return [(pair, left), (pair, right)]
+
+    async def release(targets):
+        released.extend(targets)
+
+    left.controller.prepare_device_rename = AsyncMock(side_effect=(
+        asyncio.CancelledError if cancel else HomeAssistantError('storage failed')
+    ))
+    with patch.object(services, '_preflight_each', preflight), patch.object(
+        services, '_release_preflighted', release
+    ), pytest.raises(asyncio.CancelledError if cancel else HomeAssistantError):
+        await hass.services.async_call(const.DOMAIN, 'rename', {
+            'device_id': [device], 'name': 'Bed',
+        }, blocking=True)
+    assert released == [(pair, left), (pair, right)]
+    assert frames(left.client) == frames(right.client) == []
+    await pair.async_shutdown()
+
+
 async def test_clear_known_alarm_without_notification_success_and_floor_negative_seconds(hass):
     c, device = await public_runtime(hass, alarm=False)
     c.controller._settings.update(alarm_enabled=True, alarm_visible=True)
@@ -155,6 +208,64 @@ async def test_clear_known_alarm_without_notification_success_and_floor_negative
         reference_time=datetime(2026, 11, 28, 8, 0, 0, 500000),
     ))
     assert frames(c.client)[0].startswith('00ffff01')
+    await shutdown(c)
+
+
+@pytest.mark.parametrize('cancel', [False, True])
+async def test_forget_favorite_retries_pending_alarm_clear_after_rebuild(hass, cancel):
+    c, device = await public_runtime(hass)
+    ctrl = c.controller
+    ctrl._settings.update(memories={'2': 'Reading'}, alarm_enabled=True,
+                          alarm_favorite=True, alarm_favorite_slot=2)
+    c.client.write_gatt_char.side_effect = (
+        asyncio.CancelledError if cancel else HomeAssistantError('clear failed')
+    )
+    with contextlib.nullcontext() if cancel else pytest.raises(HomeAssistantError):
+        await hass.services.async_call(const.DOMAIN, 'forget_memory', {
+            'device_id': [device], 'preset': 2,
+        }, blocking=True)
+    saved = await c._app_state_store.async_slot('linak:tempur_relax')
+    assert saved['memories'] == {} and saved['alarm_enabled'] is False
+    assert saved['pending_alarm_clear_slot'] == 2
+    c._controller = TempurRelaxController(c)
+    c.controller._capabilities = ctrl._capabilities
+    c.controller.restore_persisted_app_state(saved)
+    c.client.write_gatt_char.side_effect = None
+    await hass.services.async_call(const.DOMAIN, 'forget_memory', {
+        'device_id': [device], 'preset': 2,
+    }, blocking=True)
+    assert frames(c.client) == ['40', '40']
+    assert c.controller.persisted_app_state['pending_alarm_clear_slot'] is None
+    assert c.controller.persisted_app_state['memories'] == {}
+    await shutdown(c)
+
+
+async def test_skipped_alarm_clear_preserves_forgotten_favorite_retry(hass):
+    c, _ = await public_runtime(hass)
+    ctrl = c.controller
+    ctrl._settings.update(memories={'2': 'Reading'}, alarm_enabled=True,
+                          alarm_favorite=True, alarm_favorite_slot=2)
+    stored = asyncio.Event()
+    save = c._app_state_store._store.async_save
+
+    async def saving(data):
+        await save(data)
+        stored.set()
+
+    c._app_state_store._store.async_save = saving
+    async with ctrl._ble_lock:
+        task = asyncio.create_task(c.async_execute_controller_command(
+            lambda current: current.forget_memory(2), cancel_running=False,
+            resource='configuration',
+        ))
+        await stored.wait()
+        c.request_command_cancel()
+    await task
+    assert frames(c.client) == []
+    assert ctrl.persisted_app_state['pending_alarm_clear_slot'] == 2
+    await c.async_execute_controller_command(lambda current: current.forget_memory(2))
+    assert frames(c.client) == ['40']
+    assert ctrl.persisted_app_state['pending_alarm_clear_slot'] is None
     await shutdown(c)
 
 
