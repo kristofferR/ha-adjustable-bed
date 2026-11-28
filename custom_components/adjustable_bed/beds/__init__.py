@@ -185,6 +185,7 @@ if TYPE_CHECKING:
     from .symphony.controller import SymphonyController as SymphonyController
     from .tempur_au import TempurAUController as TempurAUController
     from .tempur_curve import TempurCurveController as TempurCurveController
+    from .thrivesleep.controller import ThriveSleepController as ThriveSleepController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
     from .truemotion.controller import TrueMotionController as TrueMotionController
     from .ultramatic.controller import UltramaticController as UltramaticController
@@ -367,6 +368,7 @@ _EXPORT_MODULES = {
     "SutaController": "suta.controller",
     "TrueMotionController": "truemotion.controller",
     "SvaneController": "svane.controller",
+    "ThriveSleepController": "thrivesleep.controller",
     "TiMOTIONAhfController": "timotion_ahf",
     "VibradormController": "vibradorm.controller",
     "VibradormAppController": "vibradorm.app",
@@ -463,6 +465,7 @@ __all__ = [
     "SvaneController",
     "SutaController",
     "SmartComfortController",
+    "ThriveSleepController",
     "TiMOTIONAhfController",
     "VibradormController",
     "VibradormAppController",

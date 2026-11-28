@@ -383,6 +383,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "dreamsense": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "muuegm": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "saatva": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "thrivesleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "super_colchones": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "ergobq": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sonicsleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
