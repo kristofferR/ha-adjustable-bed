@@ -22,7 +22,7 @@ from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import BedController
 from ..cancellation import settled
 from ..entity_specs import ControllerNumberSpec, ControllerSelectSpec
-from .controller import RichmatClassicController
+from .controller import BEFORE_SETTINGS_WRITE, RichmatClassicController
 from .homezone import HomeZoneController, HomeZoneReceive
 from .protocol import INITIALIZE, STARTUP_MS, aroma, worker_interval
 from .resource_protocol import Request
@@ -330,6 +330,14 @@ class InnovaControlController(HomeZoneController):
         if node is None:
             raise invalid("richmat_classic_control")
         await self.execute_action(node)
+
+    async def execute_request(self, request: Request) -> None:
+        if request.operation != "rgb":
+            await super().execute_request(request)
+            return
+        self.validate_request(request)
+        assert request.color is not None
+        await self.set_light_color(request.color, before_write=BEFORE_SETTINGS_WRITE.get())
 
     async def set_light_color(
         self, rgb_color: tuple[int, int, int], *, before_write: Callable[[], bool] | None = None

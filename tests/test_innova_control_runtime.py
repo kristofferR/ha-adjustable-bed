@@ -7,14 +7,18 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
+from bleak.exc import BleakError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const, services
 from custom_components.adjustable_bed.alarm import AlarmRequest
+from custom_components.adjustable_bed.beds.richmat_classic.controller import BEFORE_SETTINGS_WRITE
 from custom_components.adjustable_bed.beds.richmat_classic.homezone import HomeZoneReceive
 from custom_components.adjustable_bed.beds.richmat_classic.innova_control import AROMA_START_2
+from custom_components.adjustable_bed.command_scheduler import current_command_context
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from tests.hold_lease_wire import virtual_clock
 from tests.test_entity_sweep import async_setup_platforms_and_sweep
@@ -111,6 +115,133 @@ async def test_public_settings_native_alarm_and_no_default_replay(hass, runtime)
     assert packets(double)[1][6:8] == "7c"
     ctrl.restore_persisted_app_state({"wire": "RAW", "lamp_rgb": "abcdef", "mode": 2})
     assert ctrl._mode == 0 and "lamp_rgb" not in ctrl.persisted_app_state
+
+
+@pytest.mark.parametrize("runtime", ["YGRM"], indirect=True)
+async def test_registered_rgb_updates_native_light_and_its_next_colorless_turn_on(hass, runtime):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.light_capable = True
+    coordinator.handle_controller_state_update(UNDER_BED_LIGHTS_RGB, (7, 8, 9))
+    lamp = next(
+        light for light in _light_entities_for(hass, coordinator)
+        if light.entity_description.key == "under_bed_lights"
+    )
+    lamp.async_write_ha_state = MagicMock()
+    unregister = coordinator.register_controller_state_callback(lamp._handle_light_state)
+    try:
+        assert lamp.rgb_color == (7, 8, 9)
+        with virtual_clock():
+            await hass.services.async_call(
+                const.DOMAIN, "innova_control",
+                {"device_id": ["bed"], "operation": "rgb", "rgb_color": [18, 52, 86]},
+                blocking=True,
+            )
+            assert coordinator.controller_state[UNDER_BED_LIGHTS_RGB] == (18, 52, 86)
+            assert lamp.rgb_color == (18, 52, 86)
+            await lamp.async_turn_on()
+        assert packets(double) == ["6e0cff128b6e0d345605", "6e0cff128b6e0d345605"]
+    finally:
+        unregister()
+
+
+async def test_registered_rgb_failed_write_preserves_previous_color(hass, runtime):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.light_capable = True
+    coordinator.handle_controller_state_update(UNDER_BED_LIGHTS_RGB, (7, 8, 9))
+    double.client.write_gatt_char.side_effect = BleakError("RGB write failed")
+    with virtual_clock(), pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            const.DOMAIN, "innova_control",
+            {"device_id": ["bed"], "operation": "rgb", "rgb_color": [18, 52, 86]},
+            blocking=True,
+        )
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_RGB] == (7, 8, 9)
+
+
+async def test_registered_rgb_skipped_write_preserves_previous_color(hass, runtime):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.light_capable = True
+    coordinator.handle_controller_state_update(UNDER_BED_LIGHTS_RGB, (7, 8, 9))
+    token = BEFORE_SETTINGS_WRITE.set(lambda: False)
+    try:
+        with virtual_clock():
+            await hass.services.async_call(
+                const.DOMAIN, "innova_control",
+                {"device_id": ["bed"], "operation": "rgb", "rgb_color": [18, 52, 86]},
+                blocking=True,
+            )
+    finally:
+        BEFORE_SETTINGS_WRITE.reset(token)
+    assert packets(double) == []
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_RGB] == (7, 8, 9)
+
+
+async def test_registered_rgb_cancelled_inflight_write_publishes_only_after_delivery(hass, runtime):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.light_capable = True
+    coordinator.handle_controller_state_update(UNDER_BED_LIGHTS_RGB, (7, 8, 9))
+    entered, finish = asyncio.Event(), asyncio.Event()
+    admitted = []
+
+    async def write(*args, **kwargs):
+        context = current_command_context()
+        assert context is not None
+        admitted.append(context.cancel_event)
+        entered.set()
+        await finish.wait()
+
+    double.client.write_gatt_char.side_effect = write
+    with virtual_clock():
+        task = asyncio.create_task(hass.services.async_call(
+            const.DOMAIN, "innova_control",
+            {"device_id": ["bed"], "operation": "rgb", "rgb_color": [18, 52, 86]},
+            blocking=True,
+        ))
+        await entered.wait()
+        admitted[0].set()
+        await asyncio.sleep(0)
+        assert not task.done()
+        assert coordinator.controller_state[UNDER_BED_LIGHTS_RGB] == (7, 8, 9)
+        finish.set()
+        await task
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_RGB] == (18, 52, 86)
+    assert packets(double) == ["6e0cff128b6e0d345605"]
+
+
+@pytest.mark.parametrize("change", ("disconnect", "session", "client"))
+async def test_registered_rgb_never_republishes_after_link_change(hass, runtime, change):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.light_capable = True
+    old = ctrl._session
+
+    async def write(*args, **kwargs):
+        if change == "disconnect":
+            double.client.is_connected = False
+            ctrl.on_disconnect()
+        elif change == "session":
+            ctrl._session = replace(old)
+            coordinator.handle_controller_state_update(UNDER_BED_LIGHTS_RGB, (7, 8, 9))
+        else:
+            client = MagicMock(is_connected=True, stop_notify=AsyncMock())
+
+            async def disconnected():
+                client.is_connected = False
+
+            client.disconnect = AsyncMock(side_effect=disconnected)
+            coordinator._client = client
+            coordinator.handle_controller_state_update(UNDER_BED_LIGHTS_RGB, (7, 8, 9))
+
+    double.client.write_gatt_char.side_effect = write
+    with virtual_clock():
+        await hass.services.async_call(
+            const.DOMAIN, "innova_control",
+            {"device_id": ["bed"], "operation": "rgb", "rgb_color": [18, 52, 86]},
+            blocking=True,
+        )
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_RGB] == (
+        None if change == "disconnect" else (7, 8, 9)
+    )
+    assert packets(double) == ["6e0cff128b6e0d345605"]
 
 
 async def test_preflight_rejects_invalid_second_side_before_first_write(hass, runtime, monkeypatch):
