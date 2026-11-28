@@ -156,7 +156,9 @@ def _target(name, bed_type, **controller):
     coordinator.name = name
     coordinator.bed_type = bed_type
     coordinator.controller_side = None
-    coordinator.capability_controller = MagicMock(spec=LogicdataAppController, **controller)
+    coordinator.capability_controller = MagicMock(
+        spec=LogicdataAppController, device_rename_needs_live_validation=False, **controller
+    )
     return coordinator
 
 

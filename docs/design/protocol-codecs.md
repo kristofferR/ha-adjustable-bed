@@ -647,3 +647,13 @@ held frames. `profiles/easyctrl.py` owns its manufacturer-selected bed catalog
 and timing; the shared SynData physical-session base fences both app controllers.
 The EasyCtrl extension owns its parser, alarm calendar and release gestures,
 including model 300's unconditional incrementing STOP triplet.
+
+
+RÖWA Fernbedienung 1.1.0 reproduces all 17 frozen write vectors through
+`codec/okin_nframe.py`: the 15 independent 32-bit action literals, reconnect
+parameter record and UTF-16-counted UTF-8 name. Its separate typed profiles in
+`profiles/roewa.py` own the three remote layouts and awaited-write-plus-delay
+cadence. The shared Okin controller extension binds reads, subscription,
+initialization and refresh to one connection. Release ends refresh without
+inventing a STOP; memory-store feedback never becomes motor-position state.
+See [RÖWA](../beds/okin-nframe.md#röwa-fernbedienung).

@@ -1881,30 +1881,41 @@ async def _async_timed_move(
 async def _preflight_each(
     targets: list[tuple[BedTarget, str]],
     check: Callable[[BedChild, BedController], Awaitable[None] | None],
+    *,
+    require_live: Callable[[BedController], bool] | None = None,
 ) -> PreflightedSides:
     """Check every physical target before executing the requested command.
 
     A ``ValueError`` from ``check`` becomes a ``ServiceValidationError``; any
-    failure releases the sides connected only for validation.
+    failure releases the sides connected only for validation. ``require_live``
+    runs that check through the side's scheduler, connecting when needed.
     """
     preflighted: PreflightedSides = []
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
                 controller = await _validation_controller(coordinator, target, preflighted)
-                if controller.requires_connection_reset is True:
+                if controller.requires_connection_reset is True or (
+                    require_live is not None and require_live(controller)
+                ):
+                    checked = False
+
                     async def check_live(
                         live: BedController, *, current_target: BedChild = target
                     ) -> None:
+                        nonlocal checked
                         with controller_side_scope(current_target):
                             if (pending := check(current_target, live)) is not None:
                                 await pending
+                        checked = True
 
                     preflighted.append((coordinator, target))
                     await _execute_sided(
                         coordinator, _child_side(coordinator, SIDE_BOTH, target), check_live,
                         cancel_running=False, skip_disconnect=True, resource="configuration",
                     )
+                    if not checked:
+                        raise _bed_changed()
                     continue
                 with controller_side_scope(target):
                     if (pending := check(target, controller)) is not None:
@@ -2126,7 +2137,9 @@ async def handle_rename(call: ServiceCall) -> None:
         if controller.disconnects_after_rename:
             disconnect.add(id(target))
 
-    preflighted = await _preflight_each(targets, preflight)
+    preflighted = await _preflight_each(
+        targets, preflight, require_live=lambda c: c.device_rename_needs_live_validation,
+    )
 
     async def write_name(controller: BedController) -> None:
         await controller.rename_device(name)
