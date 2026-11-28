@@ -102,7 +102,9 @@ async def test_later_incompatible_target_rejects_before_any_write(hass):
     first, controller = target()
     second, _ = target("okin_cst")
     second.controller_side = None
-    second.capability_controller = SimpleNamespace(held_control_options=(), requires_disconnected_transport=False)
+    second.capability_controller = SimpleNamespace(
+        held_control_options=(), requires_disconnected_transport=False, requires_connection_reset=False
+    )
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
