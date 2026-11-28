@@ -1643,6 +1643,12 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
             description.key,
             self._coordinator.name,
         )
+        for child in self._coordinator.children.values():
+            controller = child.capability_controller
+            if controller is None:
+                raise BedNotConnectedError
+            with controller_side_scope(child):
+                controller.validate_button_press(description.key)
         if description.memory_slot is not None and not description.is_program_button:
             # Validate every physical slot before dispatching either recall.
             for child in self._coordinator.children.values():
