@@ -79,6 +79,53 @@ def written(c):
     return [call.args[1].hex() for call in c.client.write_gatt_char.await_args_list]
 
 
+async def test_privacy_pin_releases_idle_connection_without_recovery(hass):
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed import const
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        data={
+            "address": "AA:BB:CC:DD:EE:29",
+            "name": "AI Bed",
+            "bed_type": "ai_bed",
+            "protocol_variant": "305",
+            "ble_device_name": "MpeV3B-5-M2",
+            "disable_angle_sensing": True,
+        },
+    )
+    entry.add_to_hass(hass)
+    target = AdjustableBedCoordinator(hass, entry)
+    fake, ctrl, _ = make()
+    client = fake.client
+    ctrl._coordinator = target
+    target._client, target._controller = client, ctrl
+    target._disconnect_after_command = False
+    target._link_ready = True
+    target._idle_deadline = hass.loop.time() + 30
+
+    async def disconnect():
+        client.is_connected = False
+        target._on_disconnect(client)
+
+    client.disconnect.side_effect = disconnect
+    try:
+        await ctrl.start_notify()
+        assert target._auto_reconnect_enabled()
+        request = Request(action="privacy_pin", pin="123")
+        stamp = await ctrl.prepare_request(request)
+        async with target._command_lock:
+            await ctrl.execute_request(request, stamp)
+        client.disconnect.assert_awaited_once()
+        assert target._reconnect_timer is None
+        assert target._last_disconnect_reason == "intentional"
+        assert target.client is None
+    finally:
+        await target.async_shutdown()
+
+
 @pytest.mark.parametrize("route", ("305", "limos", "hj001", "qrrm"))
 def test_held_card_actions_have_a_standard_stop_target(route):
     from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button

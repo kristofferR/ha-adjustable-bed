@@ -800,7 +800,7 @@ class AiBedController(BedController):
                 link, codec.privacy(request.pin), cancel, mutation=True, expected_revision=revision
             ):
                 if not await pause(0.3, link.dead, cancel) and self._current(link):
-                    await link.client.disconnect()
+                    await self._coordinator.async_disconnect()
         elif request.action == "settings_query":
             packages = (
                 (2, 4, 5, 7)
