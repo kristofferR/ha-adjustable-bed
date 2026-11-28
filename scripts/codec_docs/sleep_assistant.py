@@ -3,13 +3,14 @@
 from custom_components.adjustable_bed.codec import sleep_assistant as codec
 from custom_components.adjustable_bed.profiles import sleep_assistant as app
 
+from . import _ergosportive
 from ._common import _block, _hex, _table
 
 GUIDE = "docs/beds/sleep-assistant.md"
 
 
 def bed_types() -> dict[str, tuple[str, ...]]:
-    return {"sleep_assistant": ("sleep_assistant",)}
+    return {"sleep_assistant": ("sleep_assistant",), "ergosportive": ("ergosportive:remote", "ergosportive:hardware221")}
 
 
 def profile() -> str:
@@ -69,3 +70,5 @@ BLOCKS = [
         ("settings", settings),
     )
 ]
+
+BLOCKS.extend(_ergosportive.BLOCKS)

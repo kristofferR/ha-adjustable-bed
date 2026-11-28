@@ -292,6 +292,7 @@ from .const import (
 from .import_executor import async_import_modules
 from .profiles import askona as askona_profiles
 from .profiles import enso2 as enso2_profiles
+from .profiles import ergosportive as ergosportive_app
 from .profiles import jiecang as jiecang_profiles
 from .profiles import langjue as langjue_app
 from .profiles import logicdata as logicdata_profiles
@@ -396,6 +397,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_RESTONIC: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "ergosportive": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "kingkoil": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JUNASLEEP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2464,6 +2466,21 @@ def _restonic_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
             CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200}
 
 
+def _ergosportive_validate(data: Mapping[str, Any]) -> dict[str, str]:
+    try:
+        ergosportive_app.selected(data)
+    except ValueError as err:
+        return {str(err): "ergosportive_selection"}
+    return {}
+
+
+def _ergosportive_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    profile = ergosportive_app.selected(data)
+    return {CONF_MOTOR_COUNT: max(2, sum(axis in profile.controls for axis in ("head", "feet", "tilt"))),
+            CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: ergosportive_app.REFRESH_MS}
+
+
 def _kingkoil_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     from .profiles.kingkoil import LAYOUTS
 
@@ -3562,6 +3579,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         BED_TYPE_RESTONIC,
         questions=(Question(CONF_PRODUCT_TYPE, RESTONIC_LAYOUTS), Question(CONF_PROTOCOL_VARIANT, RESTONIC_BRANCHES)),
         derive=_restonic_settings,
+    ),
+    "ergosportive": _asking(
+        "ergosportive",
+        questions=(Question(CONF_PROTOCOL_VARIANT, ergosportive_app.VARIANTS),
+                   Question(CONF_PRODUCT_TYPE, ergosportive_app.SENSORS, "remote_only"),
+                   Question(ergosportive_app.CONF_CONTROLS, ergosportive_app.CONTROLS,
+                            list(ergosportive_app.DEFAULT_CONTROLS), multiple=True)),
+        derive=_ergosportive_settings, validate=_ergosportive_validate,
     ),
     "kingkoil": _asking(
         "kingkoil",

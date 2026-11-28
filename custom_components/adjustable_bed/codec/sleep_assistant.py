@@ -8,6 +8,7 @@ binary and complete per callback, without an invented checksum or assembler.
 from __future__ import annotations
 
 import struct
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Final
 
@@ -357,3 +358,39 @@ def scalar_fields(data: str) -> dict[str, object]:
             "week": week,
         }
     return {}
+
+
+def ergosportive_secondary_release() -> bytes:
+    """A100 Hardware221: signed sums, terminator assigned after both checksums."""
+    frame = bytearray.fromhex("aa07000c000405010000000000000000")
+    frame[13] = (448 - sum(signed(value) for value in frame)) & 255
+    frame[14] = (425 - sum(signed(value) for value in frame)) & 255
+    frame[15] = 0x55
+    return bytes(frame)
+
+
+@dataclass(slots=True)
+class ErgoSportiveNormalSensor:
+    """Only an explicitly selected OldDSP normal stream, never auto DSP/side inference.
+
+    Refuse truncated data safely. The app has no checksum/length gate here;
+    presence values other than 0/1 retain prior readings, including signed rates.
+    """
+    heart: int | None = None
+    respiration: int | None = None
+    presence: bool | None = None
+    twitch: int = 0
+
+    def feed(self, data: bytes) -> bool:
+        if len(data) < 15 or data[0] != 0x8A:
+            return False
+        if data[14] == 0:
+            self.heart, self.respiration = signed(data[9]), signed(data[10])
+            self.presence = True
+            self.twitch += bool(data[12])
+            return True
+        if data[14] == 1:
+            self.heart = self.respiration = None
+            self.presence, self.twitch = False, 0
+            return True
+        return False

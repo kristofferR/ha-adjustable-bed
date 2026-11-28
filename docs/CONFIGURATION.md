@@ -681,6 +681,7 @@ beds, Reconfigure that bed, then combine them again.
 | SleepEvolution / W.Silver Products 3.x | See the [setup steps](beds/richmat.md#sleepevolution--wsilver-products-3x). |
 | Sleepy's Elite | [One question](beds/sleepys.md#home-assistant-setup) for the MFRM Sleepy's Elite app or the BOX15, BOX24 or BOX25 receiver. The [app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) asks the control box the app lists, for each physical receiver. Change an existing bed's app, control box or BOX25 dialect with **Reconfigure**. |
 | Solace / Woosa | Answer the [Solace question](beds/ff_frame.md#home-assistant-setup) with your app: HomeKobo, Sealy MotionFlex or Sweet Night, which follow the bed's Bluetooth name, or [Woosa Sleep](beds/ff_frame.md#woosa-sleep). |
+| ErgoSportive | Choose the [remote subset](beds/sleep-assistant.md#ergosportive-subset), explicit standard or Hardware221 release, and only controls your remote offers. Sensor readings require the confirmed OldDSP normal stream; automatic firmware/model selection is unavailable. |
 | King Koil Bed | Choose the [remote layout](beds/keeson.md#king-koil-bed) by its visible controls. |
 | Somos / SomosBeds | See the [setup steps](beds/keeson.md#somos--somosbeds). |
 | SonicSleep | See the [setup steps](beds/richmat.md#sonicsleep). |
