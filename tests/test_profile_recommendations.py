@@ -1053,6 +1053,21 @@ def test_legacy_alias_does_not_offer_the_same_controller_as_an_improvement():
     )
 
 
+@pytest.mark.parametrize("route", ["p1", "p2"])
+def test_dynasty_shared_transport_remains_an_app_choice_not_an_improvement(route):
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.profiles import dynasty_base_a as app
+
+    service = app.codec.TRANSPORTS[app.PROFILES[route].transport].service_uuid
+    info = advertisement("Nectar bed" if route == "p2" else "Unknown bed", [service])
+    detected = detect_bed_type_detailed(info)
+    assert "dynasty_base_a" in {detected.bed_type, *(detected.ambiguous_types or ())}
+    assert recommend_profile({CONF_BED_TYPE: "dynasty_base_a", CONF_PROTOCOL_VARIANT: "20"}, info, {}) is None
+    existing = "okin_7byte" if route == "p2" else "keeson"
+    recommendation = recommend_profile({CONF_BED_TYPE: existing}, info, {})
+    assert recommendation is None or "dynasty_base_a" not in recommendation.choices
+
+
 def test_generic_decision_survives_name_changes_but_not_changed_profile():
     from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
 

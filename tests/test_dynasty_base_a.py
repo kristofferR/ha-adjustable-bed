@@ -121,6 +121,10 @@ async def test_every_live_control_through_coordinator(
             client.write_gatt_char.reset_mock()
             client.read_gatt_char.reset_mock()
             word = row["inputs"]["mask"]
+            branch_read = route == "p2" and word in (0x200000, 0x2000000)
+            client.read_gatt_char.return_value = bytearray(
+                [0] * 10 + [0 if word == 0x2000000 else 255]
+            )
             expected = bytes.fromhex(row["expected_bytes"])
             zero = app.frame(route, 0)
             if word == 0:
@@ -170,7 +174,7 @@ async def test_every_live_control_through_coordinator(
                 )
             await target.async_execute_controller_command(command)
             assert written(client) == sequence, row["id"]
-            assert client.read_gatt_char.call_count == (len(sequence) if route == "p2" else 0)
+            assert client.read_gatt_char.call_count == (len(sequence) + branch_read if route == "p2" else 0)
             assert all(
                 call.kwargs["response"] == (route == "p1")
                 for call in client.write_gatt_char.call_args_list
@@ -708,14 +712,96 @@ async def test_reconnected_power_reads_before_choosing_branch(
     await target.async_shutdown()
 
 
+@pytest.mark.parametrize("cached,current,word", [(True, 255, 0x200000), (False, 0, 0x2000000)])
+async def test_power_refreshes_even_a_confirmed_cache(
+    hass, mock_coordinator_connected, mock_bleak_client, cached, current, word
+):
+    client = mock_bleak_client
+    target, ctrl = await connected(hass, client, "p2")
+    ctrl._massage_on = cached  # A physical remote or timer can change it afterwards.
+    client.read_gatt_char.return_value = bytearray([0] * 10 + [current])
+    await target.async_execute_controller_command(lambda c: c.action("massage_power"))
+    assert client.read_gatt_char.call_count == 2  # Fresh branch read and post-write read.
+    assert written(client) == [app.frame("p2", word)]
+    await target.async_shutdown()
+
+
+@pytest.mark.parametrize("control", ["head_up", "flat"])
+async def test_slow_post_write_status_preserves_every_hold_refresh(
+    hass, mock_coordinator_connected, mock_bleak_client, control
+):
+    client = mock_bleak_client
+    target, ctrl = await connected(hass, client, "p2")
+    word = app.controls("p2", "40")[control]
+    motion, zero = app.frame("p2", word), app.frame("p2", 0)
+    events = []
+    last_write = zero
+    with virtual_clock() as clock:
+        started = clock.now
+
+        async def write(_char, payload, **_kwargs):
+            nonlocal last_write
+            last_write = bytes(payload)
+            events.append((clock.now - started, last_write))
+
+        async def read(_char):
+            if last_write == motion:
+                await asyncio.sleep(0.25)
+            return bytearray([0] * 10 + [255])
+
+        client.write_gatt_char.side_effect, client.read_gatt_char.side_effect = write, read
+        await target.async_execute_controller_command(lambda c: c.hold_control(control, 400))
+        assert [t for t, p in events if p == motion] == pytest.approx([0, 0.1, 0.2, 0.3])
+        if control == "head_up":
+            assert [t for t, p in events if p == zero][-3:] == pytest.approx([0.4] * 3)
+        pending = ctrl._status_read
+        if pending is not None:
+            await pending.task
+    client.write_gatt_char.side_effect = None
+    await target.async_shutdown()
+
+
+@pytest.mark.parametrize("route", ["p1", "p2"])
+@pytest.mark.parametrize("layout", ["20", "30", "31", "40"])
+async def test_wire_scenario_builds_its_actual_layout(route, layout):
+    import json
+
+    from tests.test_wire_snapshot import _load_tool
+
+    tool = _load_tool()
+    sid = "dynasty_base_a" if (route, layout) == ("p1", "40") else f"dynasty_base_a:{route}:{layout}"
+    scenario = next(s for s in tool.build_scenarios() if s.id == sid)
+    layouts = json.loads(tool.LAYOUTS_PATH.read_text())
+    client = tool.FakeClient(tool.Recorder(tool.FakeClock()), layouts[scenario.layout_id], scenario.replies)
+    ctrl = await tool._build(scenario, client)
+    assert ctrl.layout == layout
+    assert set(ctrl.held_control_options) & {"tilt_up", "lumbar_up"} == {
+        f"{axis}_up" for axis in app.LAYOUTS[layout] if axis in ("tilt", "lumbar")
+    }
+    assert {s.key for s in ctrl.motor_control_specs} == set(app.LAYOUTS[layout])
+    snapshot = json.loads(tool.SNAPSHOT_PATH.read_text())["scenarios"][sid]["commands"]
+    for axis in ("tilt", "lumbar"):
+        command = snapshot[f"{axis}_up"]
+        if axis in app.LAYOUTS[layout]:
+            assert command["status"] == "ok"
+            assert any(w[3] == app.frame(route, app.AXES[axis][0]).hex() for w in command["writes"])
+            assert f"cover:{axis}_open" in snapshot
+        else:
+            assert command["status"] == "error" and command["error"] == "ValueError"
+            assert not command["writes"]
+            assert f"cover:{axis}_open" not in snapshot
+
+
 @pytest.mark.parametrize("result", ["timeout", "short", "absent"])
+@pytest.mark.parametrize("cached", [None, False, True])
 async def test_unknown_power_never_guesses_a_command(
-    hass, mock_coordinator_connected, mock_bleak_client, result
+    hass, mock_coordinator_connected, mock_bleak_client, result, cached
 ):
     from tests.error_helpers import raises_key
 
     client = mock_bleak_client
     target, ctrl = await connected(hass, client, "p2")
+    ctrl._massage_on = cached
     if result == "timeout":
         client.read_gatt_char.side_effect = TimeoutError("no status")
     elif result == "absent":
@@ -837,11 +923,23 @@ async def test_native_power_toggle_requires_confirmation_after_changed_write(
     assert target.controller._massage_on is True
     client.write_gatt_char.reset_mock()
     client.read_gatt_char.return_value = bytearray()
-    client.read_gatt_char.side_effect = {
+    failure = {
         "timeout": TimeoutError("status timeout"),
-        "short": None,
+        "short": bytearray(),
         "bleak_error": BleakError("status failed"),
     }[missing]
+    fresh = True
+
+    async def read(_char):
+        nonlocal fresh
+        if fresh:
+            fresh = False
+            return bytearray([0] * 11)
+        if isinstance(failure, Exception):
+            raise failure
+        return failure
+
+    client.read_gatt_char.side_effect = read
     await press("massage_power")
     assert written(client) == [app.frame("p2", 0x2000000)]
     assert target.controller._massage_on is None
@@ -874,9 +972,18 @@ async def test_failed_power_write_invalidates_cache_until_valid_status(
     target, ctrl = await connected(hass, client, "p2")
     ctrl._massage_on = True
     client.write_gatt_char.side_effect = BleakError("original power write failure")
-    client.read_gatt_char.side_effect = (
-        TimeoutError("read failed") if missing == "timeout" else None
-    )
+    fresh = True
+
+    async def read(_char):
+        nonlocal fresh
+        if fresh:
+            fresh = False
+            return bytearray([0] * 11)
+        if missing == "timeout":
+            raise TimeoutError("read failed")
+        return bytearray()
+
+    client.read_gatt_char.side_effect = read
     with pytest.raises(BleakError, match="original power write failure"):
         await target.async_execute_controller_command(lambda c: c.action("massage_power"))
     assert ctrl._massage_on is None
@@ -906,5 +1013,5 @@ async def test_optional_status_from_retired_session_never_updates_power(
     with pytest.raises(ConnectionError):
         await target.async_execute_controller_command(lambda c: c.action("massage_power"))
     assert ctrl._massage_on is None
-    assert written(client) == [app.frame("p2", 0x2000000)]
+    assert written(client) == []  # Session changed during the mandatory branch read.
     await target.async_shutdown()

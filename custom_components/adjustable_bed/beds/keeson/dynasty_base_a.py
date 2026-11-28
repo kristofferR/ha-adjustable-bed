@@ -152,6 +152,7 @@ class DynastyBaseAController(KeesonController):
         *,
         _expected: _Link | None = None,
         _deadline: float | None = None,
+        _status_deadline: float | None = None,
     ) -> None:
         link = self._live(_expected)
 
@@ -171,9 +172,10 @@ class DynastyBaseAController(KeesonController):
                 if self._status_read is not None:
                     self._status_read.discarded = True
 
-        # One write at a time so every P2 completion gets its own read, including
-        # failed writes. HA's settled writer supplies serialization and retries.
+        # Attempt optional P2 status after completed writes, including failures.
+        # An earlier outstanding request retains exclusive ownership of its read.
         event = cancel_event if cancel_event is not None else self._coordinator.cancel_command
+        read_deadline = _deadline if _status_deadline is None else _status_deadline
         for index in range(repeat_count):
             attempted = False
             if event.is_set():
@@ -197,14 +199,14 @@ class DynastyBaseAController(KeesonController):
                 # Optional status must not replace the actual write failure.
                 if attempted:
                     try:
-                        await self._read_status(link, cancel_event=event, deadline=_deadline)
+                        await self._read_status(link, cancel_event=event, deadline=read_deadline)
                     except ConnectionError:
                         pass
                 raise
             else:
                 self._live(link)
                 if attempted:
-                    await self._read_status(link, cancel_event=event, deadline=_deadline)
+                    await self._read_status(link, cancel_event=event, deadline=read_deadline)
 
     async def _read_status(
         self,
@@ -345,7 +347,10 @@ class DynastyBaseAController(KeesonController):
                     break
                 next_write = min(deadline, loop.time() + app.REFRESH_MS / 1000)
                 await self.write_command(
-                    self._build_command(word), _expected=link, _deadline=deadline
+                    self._build_command(word),
+                    _expected=link,
+                    _deadline=deadline,
+                    _status_deadline=next_write,
                 )
                 await _wait_unless_cancelled(event, max(0, next_write - loop.time()))
         except _HoldExpired:
@@ -434,8 +439,9 @@ class DynastyBaseAController(KeesonController):
         word = app.actions(self.route)[key]
         early = self.route == "p2" and key in ("foot_massage", "massage_power")
         if self.route == "p2" and key == "massage_power":
-            if self._massage_on is None:
-                await self._read_status(link, cancel_event=self._coordinator.cancel_command)
+            # A remote or timer may have changed power since the last command.
+            self._massage_on = None
+            await self._read_status(link, cancel_event=self._coordinator.cancel_command)
             self._live(link)
             if self._coordinator.cancel_command.is_set():
                 return

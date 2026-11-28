@@ -1566,7 +1566,7 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == "dynasty_base_a":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="40",
                         layout_id="dynasty_base_a:p1",
-                        entry_data={"motor_count": 4, "has_massage": True,
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "40", "motor_count": 4, "has_massage": True,
                                     "disable_angle_sensing": True})
     if bed_type == "junasleep":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="a",
@@ -2255,7 +2255,7 @@ def route_scenarios() -> list[Scenario]:
             scenarios.append(Scenario(id=f"dynasty_base_a:{route}:{layout}",
                 bed_type="dynasty_base_a", protocol_variant=layout,
                 layout_id=f"dynasty_base_a:{route}",
-                entry_data={"motor_count": count, "has_massage": True, "disable_angle_sensing": True},
+                entry_data={const.CONF_PROTOCOL_VARIANT: layout, "motor_count": count, "has_massage": True, "disable_angle_sensing": True},
                 replies={"read:62741625-52f9-8864-b1ab-3b3a8d65950b": "00000000000000000000ff"} if route == "p2" else {}))
     scenarios.append(Scenario(id="junasleep:b", bed_type="junasleep", protocol_variant="b",
         layout_id="junasleep:b", entry_data={"ble_device_name": "base000000000000", "motor_count": 4,
@@ -3068,6 +3068,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         {**_base_entry_data(), **scenario.entry_data},
     )
     coordinator.client = client
+    if scenario.bed_type == "dynasty_base_a":
+        coordinator.motor_count = scenario.entry_data["motor_count"]
     if scenario.bed_type == "junasleep":
         coordinator.ble_device_name = scenario.entry_data["ble_device_name"]
     if scenario.bed_type == "konfurt" or (scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest"):

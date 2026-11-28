@@ -120,9 +120,9 @@ async def test_native_power_waits_for_esphome_drain_and_discards_late_off_snapsh
         await hass.services.async_call("button", "press", {"entity_id": entity}, blocking=True)
 
     def answer():
-        if proxy.transport.requests in (1, 4):
+        if proxy.transport.requests in (1, 2, 5):
             proxy.reply_soon(255)
-        elif proxy.transport.requests == 3:
+        elif proxy.transport.requests == 4:
             proxy.reply_soon(0)
 
     proxy.transport.on_request = answer
@@ -130,21 +130,21 @@ async def test_native_power_waits_for_esphome_drain_and_discards_late_off_snapsh
         await press("foot_massage")  # A correlated off status establishes the initial cache.
         assert target.controller._massage_on is False
         client.write_gatt_char.reset_mock()
-        await press("massage_power")  # On write succeeds; read 2 exceeds the host budget.
+        await press("massage_power")  # Fresh off read; on write succeeds; read 3 exceeds budget.
         pending = target.controller._status_read
         assert pending is not None and not pending.task.done()
         assert target.controller._massage_on is None
         with raises_key("dynasty_base_a_status_required"):
             await press("massage_power")
-        assert proxy.transport.requests == 2  # No second waiter can borrow the late reply.
+        assert proxy.transport.requests == 3  # No second waiter can borrow the late reply.
         proxy.reply(255, handle=5)
         assert not pending.task.done()
         proxy.reply(255)  # Delayed off snapshot belongs only to the abandoned request.
         await pending.task
         assert target.controller._massage_on is None
-        await press("massage_power")  # Read 3 is fresh on status, so choose the off word.
+        await press("massage_power")  # Read 4 is fresh on status, so choose the off word.
         assert written(client) == [app.frame("p2", 0x200000), app.frame("p2", 0x2000000)]
-        assert proxy.transport.requests == 4
+        assert proxy.transport.requests == 5
     assert await hass.config_entries.async_unload(e.entry_id)
 
 
@@ -236,6 +236,47 @@ async def test_native_movement_releases_while_esphome_waiter_stays_attached(
     assert await hass.config_entries.async_unload(e.entry_id)
 
 
+@pytest.mark.parametrize("control", ["head_up", "flat"])
+async def test_slow_esphome_replies_do_not_delay_held_refreshes(
+    hass, mock_coordinator_connected, mock_bleak_client, control
+):
+    proxy, client = _Proxy(), mock_bleak_client
+    target, ctrl = await connected(hass, client, "p2")
+    client.read_gatt_char.side_effect = proxy.read
+    word = app.controls("p2", "40")[control]
+    motion, zero = app.frame("p2", word), app.frame("p2", 0)
+    last_write = zero
+    events = []
+    with virtual_clock() as clock:
+        started = clock.now
+
+        async def write(_char, payload, **_kwargs):
+            nonlocal last_write
+            last_write = bytes(payload)
+            events.append((clock.now - started, last_write))
+
+        def answer():
+            if last_write == motion:
+                asyncio.get_running_loop().call_later(0.25, proxy.reply, 255)
+            else:
+                proxy.reply_soon(255)
+
+        client.write_gatt_char.side_effect = write
+        proxy.transport.on_request = answer
+        await target.async_execute_controller_command(lambda c: c.hold_control(control, 400))
+        assert [t for t, p in events if p == motion] == pytest.approx([0, 0.1, 0.2, 0.3])
+        if control == "head_up":
+            assert [t for t, p in events if p == zero][-3:] == pytest.approx([0.4] * 3)
+        assert proxy.transport.requests == (5 if control == "head_up" else 2)
+        pending = ctrl._status_read
+        assert pending is not None and not pending.task.done()
+        assert ctrl._massage_on is None
+        await pending.task
+        assert ctrl._massage_on is None  # Late snapshot cannot become branch state.
+    client.write_gatt_char.side_effect = None
+    await target.async_shutdown()
+
+
 async def test_esphome_backend_timeout_requires_new_connection_before_trusting_status(
     hass, mock_coordinator_connected, mock_bleak_client
 ):
@@ -245,7 +286,9 @@ async def test_esphome_backend_timeout_requires_new_connection_before_trusting_s
     with virtual_clock():
         proxy = _Proxy(backend_timeout=0.05)
         client.read_gatt_char.side_effect = proxy.read
-        await target.async_execute_controller_command(lambda c: c.action("massage_power"))
+        with raises_key("dynasty_base_a_reconnect_required"):
+            await target.async_execute_controller_command(lambda c: c.action("massage_power"))
+        client.write_gatt_char.assert_not_called()
         assert ctrl._massage_on is None
         assert ctrl._status_read is None
         assert proxy.transport.requests == 1

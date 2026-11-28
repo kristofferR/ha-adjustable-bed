@@ -7668,14 +7668,16 @@ P2 reads status after writes. It derives its timer indicator and massage power
 branch from the status byte; it does not report light state. Unknown fields
 stay private. Missing receive roles or notification setup failures do not
 prevent other writable controls from operating. Optional status reads have a
-one-second Home Assistant timeout, shortened to the remaining movement budget
-while moving. Caller cancellation or the deadline ends the wait for status,
-so movement release starts on time. The original backend read stays attached
+one-second Home Assistant timeout, shortened to the next refresh boundary
+during a hold, including its final release deadline. Caller cancellation or
+the deadline ends the wait for status, so refresh and movement release start
+on time. The original backend read stays attached
 until its reply drains, and that late result is discarded. A second read never
 starts while the original is pending. If the backend request itself fails or
 times out, reconnect the bed before using massage power again; other controls
-remain available. On a fresh P2 connection,
-massage power first reads status to select the correct command. A submitted
+remain available. Every P2 massage-power action first reads fresh status to
+select the correct command, since a physical remote or timer may have changed
+power since the last report. A submitted
 state change clears cached power until a valid status confirms it, including
 when the write fails or the following read is short or times out. If status is
 unavailable, the next power toggle asks for current status instead of reusing

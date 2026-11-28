@@ -585,8 +585,8 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
             # Both inherit Keeson's no-op reader without reporting positions.
             assert not any(bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type))
             continue
-        if bed_type == const.BED_TYPE_KONFURT:
-            # KONFURT inherits Keeson's no-op; none of its layouts reports positions.
+        if bed_type in (const.BED_TYPE_KONFURT, const.BED_TYPE_DYNASTY_BASE_A):
+            # These inherit Keeson's no-op; none of their layouts reports positions.
             assert type(controller).read_positions is KeesonController.read_positions
             assert not any(bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type))
             continue
