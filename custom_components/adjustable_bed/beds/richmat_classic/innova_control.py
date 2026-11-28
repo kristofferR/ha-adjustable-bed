@@ -24,7 +24,7 @@ from ..cancellation import settled
 from ..entity_specs import ControllerNumberSpec, ControllerSelectSpec
 from .controller import BEFORE_SETTINGS_WRITE, RichmatClassicController
 from .homezone import HomeZoneController, HomeZoneReceive
-from .protocol import INITIALIZE, STARTUP_MS, aroma, worker_interval
+from .protocol import INITIALIZE, SETTINGS_SPACING_MS, STARTUP_MS, aroma, worker_interval
 from .resource_protocol import Request
 from .transport import ROUTES, Transport, select
 
@@ -332,12 +332,34 @@ class InnovaControlController(HomeZoneController):
         await self.execute_action(node)
 
     async def execute_request(self, request: Request) -> None:
-        if request.operation != "rgb":
+        if request.operation not in ("rgb", "aroma"):
             await super().execute_request(request)
             return
         self.validate_request(request)
-        assert request.color is not None
-        await self.set_light_color(request.color, before_write=BEFORE_SETTINGS_WRITE.get())
+        if request.operation == "rgb":
+            assert request.color is not None
+            await self.set_light_color(request.color, before_write=BEFORE_SETTINGS_WRITE.get())
+            return
+        assert request.aroma_times is not None
+        with self._transaction() as session:
+
+            def current() -> bool:
+                return (
+                    self._session is session
+                    and self.client is session.client
+                    and session.client.is_connected
+                )
+
+            cancel = self._coordinator.cancel_command
+            for (_, key, code, _, _), value in zip(AROMA_SETTINGS, request.aroma_times, strict=True):
+                if cancel.is_set():
+                    return
+                with self.sent_state(key(value), is_current=current):
+                    await self.write_command(aroma(code, value))
+                if not await self._wait(SETTINGS_SPACING_MS, cancel):
+                    return
+            if self._session is session and not cancel.is_set():
+                self._publish()
 
     async def set_light_color(
         self, rgb_color: tuple[int, int, int], *, before_write: Callable[[], bool] | None = None

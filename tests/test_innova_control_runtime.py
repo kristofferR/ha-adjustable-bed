@@ -1,7 +1,7 @@
 """Public settings, native entities, pairing admission and grouping teardown."""
 
 import asyncio
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager, nullcontext, suppress
 from dataclasses import replace
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
@@ -15,15 +15,23 @@ from custom_components.adjustable_bed import const, services
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.richmat_classic.controller import BEFORE_SETTINGS_WRITE
 from custom_components.adjustable_bed.beds.richmat_classic.homezone import HomeZoneReceive
-from custom_components.adjustable_bed.beds.richmat_classic.innova_control import AROMA_START_2
+from custom_components.adjustable_bed.beds.richmat_classic.innova_control import (
+    AROMA_PAUSE_3,
+    AROMA_START_2,
+    AROMA_START_3,
+)
+from custom_components.adjustable_bed.beds.richmat_classic.resource_protocol import Request
 from custom_components.adjustable_bed.command_scheduler import current_command_context
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.light import _light_entities_for
+from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from tests.hold_lease_wire import virtual_clock
 from tests.test_entity_sweep import async_setup_platforms_and_sweep
 from tests.test_innova_control import controller, packets
 from tests.test_richmat_classic_transport import Services, channel, route
+
+AROMA_KEYS = (AROMA_START_2, AROMA_START_3, AROMA_PAUSE_3)
 
 
 @pytest.fixture
@@ -242,6 +250,198 @@ async def test_registered_rgb_never_republishes_after_link_change(hass, runtime,
         None if change == "disconnect" else (7, 8, 9)
     )
     assert packets(double) == ["6e0cff128b6e0d345605"]
+
+
+async def test_registered_aroma_updates_each_native_number(hass, runtime):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.aroma_capable = True
+    numbers = {
+        number.entity_description.key: number
+        for number in _number_entities_for(hass, coordinator)
+        if number.entity_description.key.startswith("controller_number_innova_control_aroma_")
+    }
+    with virtual_clock():
+        await hass.services.async_call(
+            const.DOMAIN, "innova_control",
+            {"device_id": ["bed"], "operation": "aroma", "aroma_times": [1, 60, 12]},
+            blocking=True,
+        )
+    assert tuple(coordinator.controller_state.get(key) for key in AROMA_KEYS) == (1, 60, 12)
+    assert {
+        key: number.native_value for key, number in numbers.items()
+    } == {
+        "controller_number_innova_control_aroma_start_2": 1,
+        "controller_number_innova_control_aroma_start_3": 60,
+        "controller_number_innova_control_aroma_pause_3": 12,
+    }
+    assert packets(double) == ["6e1b00018a", "6e1c003cc6", "6e1d000c97"]
+
+
+@pytest.mark.parametrize("failure_at", (1, 2, 3))
+async def test_registered_aroma_failure_retains_each_completed_setting(hass, runtime, failure_at):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.aroma_capable = True
+    previous, requested = (2, 3, 4), (1, 60, 12)
+    coordinator.handle_controller_state_updates(*(k(v) for k, v in zip(AROMA_KEYS, previous, strict=True)))
+    attempts = 0
+
+    async def write(*args, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        if attempts == failure_at:
+            raise BleakError("Aroma write failed")
+
+    double.client.write_gatt_char.side_effect = write
+    with virtual_clock(), pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            const.DOMAIN, "innova_control",
+            {"device_id": ["bed"], "operation": "aroma", "aroma_times": requested},
+            blocking=True,
+        )
+    assert attempts == failure_at
+    assert tuple(coordinator.controller_state[k] for k in AROMA_KEYS) == (
+        requested[:failure_at - 1] + previous[failure_at - 1:]
+    )
+
+
+async def test_registered_aroma_keeps_before_write_guard_for_each_setting(hass, runtime):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.aroma_capable = True
+    coordinator.handle_controller_state_updates(*(k(v) for k, v in zip(AROMA_KEYS, (2, 3, 4), strict=True)))
+    checked = 0
+
+    def before_write():
+        nonlocal checked
+        checked += 1
+        return checked == 1
+
+    token = BEFORE_SETTINGS_WRITE.set(before_write)
+    try:
+        with virtual_clock():
+            await hass.services.async_call(
+                const.DOMAIN, "innova_control",
+                {"device_id": ["bed"], "operation": "aroma", "aroma_times": [1, 60, 12]},
+                blocking=True,
+            )
+    finally:
+        BEFORE_SETTINGS_WRITE.reset(token)
+    assert checked == 3
+    assert packets(double) == ["6e1b00018a"]
+    assert tuple(coordinator.controller_state[k] for k in AROMA_KEYS) == (1, 3, 4)
+
+
+@pytest.mark.parametrize("cancel_at", (1, 2, 3))
+async def test_registered_aroma_cancel_drains_and_publishes_only_completed_settings(
+    hass, runtime, cancel_at
+):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.aroma_capable = True
+    previous, requested = (2, 3, 4), (1, 60, 12)
+    coordinator.handle_controller_state_updates(*(k(v) for k, v in zip(AROMA_KEYS, previous, strict=True)))
+    entered, finish = asyncio.Event(), asyncio.Event()
+    pending = []
+    attempts = 0
+
+    async def write(*args, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        if attempts == cancel_at:
+            context = current_command_context()
+            assert context is not None
+            pending.append(context.cancel_event)
+            entered.set()
+            await finish.wait()
+
+    double.client.write_gatt_char.side_effect = write
+    with virtual_clock():
+        task = asyncio.create_task(hass.services.async_call(
+            const.DOMAIN, "innova_control",
+            {"device_id": ["bed"], "operation": "aroma", "aroma_times": requested},
+            blocking=True,
+        ))
+        await entered.wait()
+        pending[0].set()
+        await asyncio.sleep(0)
+        assert not task.done()
+        assert tuple(coordinator.controller_state[k] for k in AROMA_KEYS) == (
+            requested[:cancel_at - 1] + previous[cancel_at - 1:]
+        )
+        finish.set()
+        await task
+    assert attempts == cancel_at
+    assert tuple(coordinator.controller_state[k] for k in AROMA_KEYS) == (
+        requested[:cancel_at] + previous[cancel_at:]
+    )
+
+
+async def test_aroma_task_cancellation_drains_one_setting_without_sending_the_next(runtime):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.aroma_capable = True
+    coordinator.handle_controller_state_updates(*(k(v) for k, v in zip(AROMA_KEYS, (2, 3, 4), strict=True)))
+    entered, finish = asyncio.Event(), asyncio.Event()
+
+    async def write(*args, **kwargs):
+        if len(packets(double)) == 2:
+            entered.set()
+            await finish.wait()
+
+    double.client.write_gatt_char.side_effect = write
+    with virtual_clock():
+        task = asyncio.create_task(coordinator.async_execute_controller_command(
+            lambda c: c.execute_request(Request("aroma", aroma_times=(1, 60, 12))),
+            resource="configuration",
+        ))
+        await entered.wait()
+        task.cancel()
+        await asyncio.sleep(0)
+        assert not task.done()
+        assert tuple(coordinator.controller_state[k] for k in AROMA_KEYS) == (1, 3, 4)
+        finish.set()
+        with suppress(asyncio.CancelledError):
+            await task
+    assert packets(double) == ["6e1b00018a", "6e1c003cc6"]
+    assert tuple(coordinator.controller_state[k] for k in AROMA_KEYS) == (1, 60, 4)
+
+
+@pytest.mark.parametrize("change", ("disconnect", "session", "client"))
+@pytest.mark.parametrize("change_at", (1, 3))
+async def test_registered_aroma_never_publishes_or_continues_on_replaced_link(
+    hass, runtime, change, change_at
+):
+    coordinator, ctrl, double = runtime
+    ctrl._receive.aroma_capable = True
+    old = ctrl._session
+
+    async def write(*args, **kwargs):
+        if len(packets(double)) != change_at:
+            return
+        if change == "disconnect":
+            double.client.is_connected = False
+            ctrl.on_disconnect()
+        elif change == "session":
+            ctrl._session = replace(old)
+        else:
+            client = MagicMock(is_connected=True, stop_notify=AsyncMock())
+
+            async def disconnected():
+                client.is_connected = False
+
+            client.disconnect = AsyncMock(side_effect=disconnected)
+            coordinator._client = client
+        if change != "disconnect":
+            coordinator.handle_controller_state_updates(*(k(v) for k, v in zip(AROMA_KEYS, (9, 8, 7), strict=True)))
+
+    double.client.write_gatt_char.side_effect = write
+    with virtual_clock(), (pytest.raises(ConnectionError) if change_at == 1 else nullcontext()):
+        await hass.services.async_call(
+            const.DOMAIN, "innova_control",
+            {"device_id": ["bed"], "operation": "aroma", "aroma_times": [1, 60, 12]},
+            blocking=True,
+        )
+    assert tuple(coordinator.controller_state[k] for k in AROMA_KEYS) == (
+        (None, None, None) if change == "disconnect" else (9, 8, 7)
+    )
+    assert len(packets(double)) == change_at
 
 
 async def test_preflight_rejects_invalid_second_side_before_first_write(hass, runtime, monkeypatch):
