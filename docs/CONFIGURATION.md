@@ -395,6 +395,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
+| Dreamotion Smart (DreamMotion Pro app) | `dreamotion_smart` | 4 | 300 ms |
 | eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
 | Flexispot app | `flexispot` | 5 | 200 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
@@ -1019,6 +1020,13 @@ box. BOX2422 provides back, legs and combined movement; BOX2442 adds head tilt
 and lumbar. Massage and light controls are app-specific. Preset/save/reset
 controls and alarm programming are unavailable pending complete model and field
 mapping; alarm disable/query and clock synchronization are available.
+
+### Innova Control
+
+Choose **Innova Control app** for `com.richmat.innova2`, then select the remote
+layout or concrete model-picker choice. This is distinct from INNOVA
+(`com.ore.sfm`). Mode tabs remain logical modes, not paired bed sides. Optional
+light/aroma entities require capability replies on the current connection.
 
 ### PowersBedding
 

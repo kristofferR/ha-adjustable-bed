@@ -3248,6 +3248,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.richmat.jerome_services import async_register_jerome_repeat_alarm
     from .beds.richmat_app.services import async_register_richmat_app_services
     from .beds.richmat_classic.homezone_services import async_register_homezone_services
+    from .beds.richmat_classic.innova_control_services import async_register_innova_control_services
     from .beds.richmat_classic.jerome_services import async_register_jerome_services
     from .beds.richmat_classic.lp2_services import async_register_lp2_services
     from .beds.richmat_classic.resource_services import async_register_resource_bed_services
@@ -3302,6 +3303,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_position_estimate_services,
         async_register_richmat_classic_services,
         async_register_homezone_services,
+        async_register_innova_control_services,
         async_register_sleepfunction_services,
         async_register_lp2_services,
         async_register_jerome_services,

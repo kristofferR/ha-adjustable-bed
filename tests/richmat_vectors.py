@@ -2386,3 +2386,16 @@ def _homezone_frames() -> frozenset[str]:
 
 
 FROZEN_FRAMES["richmat_classic_homezone"] = _homezone_frames()
+
+
+# Innova Control's fixed BED helpers: accepted V04/V06-V11, release modes,
+# zero-duration countdown and the catalog's massage slider/popup operands.
+# Its catalog, RGB, grouping and parameterized writers are also checked in
+# test_innova_control against this app's independent accepted fixture.
+FROZEN_FRAMES["richmat_classic_innova2"] = frozenset({
+    "6e", "6e01006edd", "6e01016ede", "6e01026edf",
+    "6e02010071", "6e08010178", "6e0a000179", "6e1a000088",
+    "6e05000073", "6e06000074",
+    "6e01000170", "6e01000473", "6e01005ecd", "6e01005fce",
+    "6e010061d0", "6e010063d2", "6e01008bfa",
+})

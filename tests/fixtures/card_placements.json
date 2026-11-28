@@ -982,6 +982,24 @@
   "card_role": "up",
   "card_motor": "dorsal_zero_gravity"
  },
+ "button:dreamotion_smart_back": {
+  "card_section": "massage"
+ },
+ "button:dreamotion_smart_foot": {
+  "card_section": "massage"
+ },
+ "button:dreamotion_smart_pattern": {
+  "card_section": "massage"
+ },
+ "button:dreamotion_smart_preview_light": {
+  "card_section": "lighting"
+ },
+ "button:dreamotion_smart_refresh": {
+  "card_section": "utility"
+ },
+ "button:dreamotion_smart_save_light": {
+  "card_section": "lighting"
+ },
  "button:dynasty_query": {
   "card_section": "utility"
  },
@@ -4212,6 +4230,15 @@
   "card_role": "estimate",
   "card_motor": "head"
  },
+ "number:innova_control_aroma_pause_3": {
+  "card_section": "utility"
+ },
+ "number:innova_control_aroma_start_2": {
+  "card_section": "utility"
+ },
+ "number:innova_control_aroma_start_3": {
+  "card_section": "utility"
+ },
  "number:instant_comfort_left_lumbar_firmness": {
   "card_section": "firmness"
  },
@@ -4587,6 +4614,18 @@
  "select:dreamlab_press_mode": {
   "card_section": "utility"
  },
+ "select:dreamotion_smart_duration": {
+  "card_section": "lighting"
+ },
+ "select:dreamotion_smart_mode": {
+  "card_section": "massage"
+ },
+ "select:dreamotion_smart_page": {
+  "card_section": "lighting"
+ },
+ "select:dreamotion_smart_slot": {
+  "card_section": "lighting"
+ },
  "select:dreamsense_selected_side": {
   "card_section": "utility"
  },
@@ -4680,6 +4719,9 @@
  "select:hjbed_layout": {
   "card_section": "utility"
  },
+ "select:innova_control_timer_progress": {
+  "card_section": "utility"
+ },
  "select:jerome_adjustable_base_side": {
   "card_section": "motors"
  },
@@ -4750,7 +4792,16 @@
  "select:richmat_app_side": {
   "card_section": "motors"
  },
+ "select:richmat_classic_head_foot": {
+  "card_section": "utility"
+ },
  "select:richmat_classic_hold": {
+  "card_section": "utility"
+ },
+ "select:richmat_classic_mode": {
+  "card_section": "utility"
+ },
+ "select:richmat_classic_program": {
   "card_section": "utility"
  },
  "select:richmat_mh_motor_mode": {
@@ -5256,6 +5307,21 @@
  },
  "sensor:doublesleep_use_side": {
   "card_section": "utility"
+ },
+ "sensor:dreamotion_smart_back": {
+  "card_section": "massage"
+ },
+ "sensor:dreamotion_smart_foot": {
+  "card_section": "massage"
+ },
+ "sensor:dreamotion_smart_pattern": {
+  "card_section": "massage"
+ },
+ "sensor:dreamotion_smart_seconds": {
+  "card_section": "lighting"
+ },
+ "sensor:dreamotion_smart_timer": {
+  "card_section": "massage"
  },
  "sensor:dreamsense_alarm_ack": {
   "card_section": "hidden"
@@ -6213,6 +6279,9 @@
  },
  "switch:doublesleep_sonic": {
   "card_section": "massage"
+ },
+ "switch:dreamotion_smart_sensor": {
+  "card_section": "utility"
  },
  "switch:dreamsense_split": {
   "card_section": "utility"

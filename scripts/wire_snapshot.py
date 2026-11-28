@@ -1522,6 +1522,8 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "intellibed":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="old")
     if bed_type == "active_sleep":
         from custom_components.adjustable_bed.codec import active_sleep as active
         return Scenario(id=bed_type, bed_type=bed_type, layout_id=bed_type,
@@ -1648,6 +1650,15 @@ def default_scenario(bed_type: str) -> Scenario:
             layout_id="dreamsense:gatt:1",
             replies={"write:6e0a000179": "6e0e00037f"},
         )
+    if bed_type == "dreamotion_smart":
+        return Scenario(id=bed_type, bed_type=bed_type, replies={
+            "write:f1f14302a200": "f2f24302a101e77e",
+            "write:f1f14002a200": "f2f24002a101e47e",
+            "write:f1f18002a200": "f2f28002a132557e",
+            "write:f1f18105a200": "f2f28105a1010201032e7e",
+            "write:f1f14507a200": "f2f24507a164ff0080012cfd7e",
+            "write:f1f1440da200": "f2f2440da164ff00003200ff00190000ff9e7e",
+        })
     if bed_type == "awmotion":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="SN300",
                         entry_data={"bed_type": bed_type, "protocol_variant": "SN300"},
@@ -2386,6 +2397,18 @@ def route_scenarios() -> list[Scenario]:
                 },
             ))
     if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
+        for layout, suffix in (("6BRM", ""), ("6BRM", "_nordic"), ("BRRM", ""),
+                               ("E3RM", ""), ("U3RM", ""), ("BTRM", ""),
+                               ("D9RM", ""), ("Y6RM", "")):
+            scenarios.append(Scenario(
+                id=f"richmat_classic_apps:innova2:{layout}" + (":nordic" if suffix else ""),
+                bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS, protocol_variant="innova2",
+                layout_id=const.BED_TYPE_RICHMAT_CLASSIC_APPS + suffix,
+                entry_data={const.CONF_PRODUCT_TYPE: layout, const.CONF_BLE_DEVICE_NAME: layout},
+                replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f",
+                         "write:6e1a000088": "6e1a000189"},
+            ))
+    if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
         for layout, receiver, gatt in (
             ("6BRM", "6BRM", "richmat_classic_apps_nordic"),
             ("6BRM", "6BRM", "richmat_classic_apps"),
@@ -2731,6 +2754,7 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
                               layout_id=f"berun:v{v}") for v in (6, 7, 8, 9))
     scenarios.extend(Scenario(id=f"flexispot:{model}", bed_type="flexispot",
@@ -3083,7 +3107,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_read_device_info(session)
             return
-        if controller._coordinator.bed_type in {"shuda", "sleeptime", "mattresspoint"}:
+        if controller._coordinator.bed_type in {"shuda", "sleeptime", "mattresspoint", "dreamotion_smart"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"amada", "meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue", "ifit"}:

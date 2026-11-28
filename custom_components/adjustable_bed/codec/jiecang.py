@@ -87,11 +87,13 @@ def _range(name: str, value: int, low: int, high: int) -> None:
         raise ValueError(f"{name} must be between {low} and {high}")
 
 
-def frame(opcode: int, payload: bytes = b"") -> bytes:
+def frame(opcode: int, payload: bytes = b"", *, declared_length: int | None = None) -> bytes:
     """Encode one request, including the additive checksum."""
     _range("opcode", opcode, 0, 255)
     _range("payload length", len(payload), 0, 255)
-    body = bytes((opcode, len(payload))) + payload
+    length = len(payload) if declared_length is None else declared_length
+    _range("declared length", length, 0, 255)
+    body = bytes((opcode, length)) + payload
     return b"\xf1\xf1" + body + bytes((sum(body) & 0xFF, 0x7E))
 
 
@@ -335,3 +337,18 @@ def parse_notification(data: bytes, *, massage_levels: tuple[int, ...]) -> Notif
             massage_legs=data[6] if data[2] == 6 and data[6] in massage_levels else None,
         )
     return None
+
+
+def parse_sendinfo_record(data: bytes) -> tuple[int, bytes] | None:
+    """Read Dreamotion Smart's callback fields, without trusting its length/trailer.
+
+    The app dispatches a single notification by F2F2/opcode and fixed offsets.
+    Short callbacks are ignored safely; no stream reassembly is implied.
+    82 is decoded only for frozen-vector comparison, never exposed as bed audio.
+    """
+    if data[:2] != b"\xf2\xf2" or len(data) < 3:
+        return None
+    size = {0x40: 1, 0x43: 1, 0x80: 1, 0x81: 4, 0x82: 1, 0x45: 6, 0x44: 12}.get(data[2])
+    if size is None or len(data) < 5 + size:
+        return None
+    return data[2], data[5:5 + size]
