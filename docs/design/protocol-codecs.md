@@ -522,6 +522,14 @@ vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
 motion/session runtime; Settings gates belong to the current connection.
 The profile does not admit the other catalog layouts or raw transport.
 
+### Active Sleep
+
+`codec/active_sleep.py` and its typed profile are separate from Bed Operation's
+`codec/paramount.py`: the latter adds a `40` header and uses different GATT
+UUIDs, so it does not reproduce the Active Sleep literals. All 32 frozen
+Active Sleep frames have an independent literal vector test, including excluded
+commands tested only through the codec, never exposed as runtime actions.
+
 ## Thrive Sleep
 
 Thrive Sleep 1.1.2 uses the existing Richmat function, calendar, RGB, light-timer,

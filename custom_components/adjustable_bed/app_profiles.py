@@ -215,6 +215,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_LEVA: SideProfile(
         "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
     ),
+    "active_sleep": SideProfile("Active Sleep"),
     BED_TYPE_LANGJUE: SideProfile("Comfort Smart Bed (Langjue)"),
     BED_TYPE_GHOSTBED: SideProfile("GhostBed", frozenset({CONF_HAS_LIGHT})),
     BED_TYPE_FLEXISPOT: SideProfile("Flexispot", frozenset({CONF_HAS_LIGHT})),
