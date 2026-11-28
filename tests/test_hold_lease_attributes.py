@@ -80,7 +80,8 @@ def test_combined_motor_offers_a_hold_only_when_both_sides_agree(mode, right, ex
     coordinator.children = {
         side: SimpleNamespace(controller_side=None,
             capability_controller=SimpleNamespace(
-                execution=controller.execution, motor_control_specs=[spec]
+                    execution=controller.execution, motor_control_specs=[spec],
+                    controller_button_specs=(),
             ),
             bed_type="linak",
         )

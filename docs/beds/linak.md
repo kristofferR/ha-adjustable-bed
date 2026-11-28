@@ -28,6 +28,7 @@ connects. A retail brand or model name does not select the app profile.
 | ✅ | [Linak Bed Control](https://play.google.com/store/apps/details?id=com.linak.linakbed.ble.memory) 6.0.9 (`264`) | `com.linak.linakbed.ble.memory` |
 | ✅ | [Bed Connect](https://play.google.com/store/apps/details?id=com.linak.bedconnect.iot) 5.2.4 (`253`) | `com.linak.bedconnect.iot` |
 | ✅ | [AA Control My Bed](https://play.google.com/store/apps/details?id=com.americanAdjustables.AmericanAdjustablesRemote) 6.1.3 (`269`) | `com.americanAdjustables.AmericanAdjustablesRemote` |
+| ✅ | [Tempur Relax Control](https://play.google.com/store/apps/details?id=fr.tempur.relaxcontrol) 6.1.3 (`269`), [profile](#tempur-relax-control) | `fr.tempur.relaxcontrol` |
 | ✅ | [Carpe Diem Beds](https://play.google.com/store/apps/details?id=se.carpediembeds.controller.iot) 5.2.5 (`254`) | `se.carpediembeds.controller.iot` |
 | ✅ | [Performance Series](https://play.google.com/store/apps/details?id=com.linak.leggettandplatt) 1.0 (`124`) | `com.linak.leggettandplatt` |
 
@@ -201,6 +202,9 @@ with `Insufficient authorization` ([#714](https://github.com/kristofferR/ha-adju
 
 ## Commands
 
+These tables describe Bed Control unless a profile is named. Tempur Relax
+Control has its own [conditional release rules](#tempur-relax-control).
+
 All normal commands are written to the control characteristic as `[opcode, 00]`.
 
 ### Motor Control
@@ -219,7 +223,8 @@ All normal commands are written to the control characteristic as `[opcode, 00]`.
 > [!WARNING]
 > `00 00` is flat/all down (the code's `INITIALIZE_DOWN`), not STOP. Earlier
 > versions of this document listed it as Stop; using it to stop can cause a brief
-> reverse movement. Always release with `FF 00`.
+> reverse movement. Bed Control releases with `FF 00`; Tempur Relax Control
+> selects its release from the primary receiver's capabilities as described below.
 
 ### Two-section movement
 
@@ -521,6 +526,236 @@ neutral release on the same connection that received movement.
 
 Based on Carpe Diem Beds 5.2.5 (`254`). Physical behavior needs testing.
 
+### Tempur Relax Control
+
+**App:** [Tempur Relax Control](https://play.google.com/store/apps/details?id=fr.tempur.relaxcontrol) 6.1.3 (`269`), `fr.tempur.relaxcontrol`
+
+**Status:** Not yet tested on hardware
+
+#### Setup
+
+Choose **Tempur Relax Control app** explicitly. Its shared Linak control service
+cannot distinguish this app from Bed Control or the other Linak apps. Declare
+the motor count for a controller without reference outputs and enable massage
+only if your bed has it. On Advanced controllers, the live actuator mask selects
+the available back, legs, head, feet and base controls. Declared motor count is
+used only after Standard or TD3 is resolved. An unreadable mask does not enable
+movement from an assumed layout. Ordinary presses and timed actions both check
+the live capabilities. Capabilities are rediscovered per connection.
+
+If authentication initially refuses the mask, Home Assistant uses the shared
+Linak bond/encryption and bounded readiness recovery before retrying it on the
+same connection. Deferred notification channels resume too. Newly proven covers
+and favorite buttons appear automatically, including when a later reconnect
+resolves setup's missing mask. Recovery uses the existing STOP readiness probe
+as Home Assistant link preparation, without inventing an app startup command.
+For sequential pairs, capability recovery uses the same one-connection side
+operations as movement and releases each receiver before connecting the next.
+
+Home Assistant handles Bluetooth bonding. Add independent bed halves separately
+and combine them in Home Assistant to use Left/Right targets. Each write keeps
+the app's default zero side byte; this profile offers no single-address pairing.
+Tempur pairs honor the selected connection topology. With concurrent links,
+each refresh awaits primary (Left), then secondary (Right), followed by the
+100 ms gap. A primary failure prevents the secondary write. With sequential
+links, a finite operation completes on Left, releases its link, then runs on
+Right. Finite Both holds work in either mode; a renewable Both hold requires
+two concurrent links. Names save both local choices before ordered device writes.
+A Both tap uses the primary side's Movement per tap settings for one shared
+refresh plan. Per-side taps retain their own settings. The combined card's
+gesture release ends its admitted hold; the explicit Stop remains separate.
+Favorites, massage, automatic drive, reset and alarms belong to the primary.
+The secondary exposes its movement and light controls. Cleanup on both receivers
+uses the primary's alarm/TD3 flags.
+
+#### Controls
+
+| Feature | Available |
+|---|---|
+| Movement | Individual and selected sections, held flat and all up |
+| Favorites | Four recalls and stores on TD3 and Advanced; none on Standard |
+| Massage | Back, legs or both, off, next mode and intensity steps |
+| Under-bed light | Toggle button |
+| Automatic drive | Commanded-state switch, disabled by default |
+| Device name | Generic rename action, up to 17 UTF-16 code units |
+| Wake and reset defaults | Shared buttons; reset disabled by default |
+| Position sliders and angles | Not available |
+| Hardware alarms | Daily favorite and/or massage alarm on Advanced with Alarm |
+| Favorite labels | Shared Name a favorite and Forget a favorite actions, saved locally |
+
+<!-- generated:linak-tempur-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Bytes |
+|---|---|
+| Back down | `0A 00` |
+| Back up | `0B 00` |
+| Legs down | `08 00` |
+| Legs up | `09 00` |
+| Head down | `02 00` |
+| Head up | `03 00` |
+| Feet down | `04 00` |
+| Feet up | `05 00` |
+| Base down | `06 00` |
+| Base up | `07 00` |
+| All down (Standard / Advanced) | `00 00` |
+| All up (Standard / Advanced) | `01 00` |
+| All down (TD3) | `34 00` |
+| All up (TD3) | `37 00` |
+| Direct STOP API (see release table) | `FF 00` |
+| Wake | `FE 00` |
+| Light toggle | `94 00` |
+| Reset defaults | `4E 00` |
+| Massage off | `80 00` |
+| Next massage mode | `81 00` |
+| Back intensity up | `8D 00` |
+| Back intensity down | `8E 00` |
+| Leg intensity up | `8F 00` |
+| Leg intensity down | `90 00` |
+| Both intensity up | `A8 00` |
+| Both intensity down | `A9 00` |
+| Recall 1 | `0E 00` |
+| Save 1 | `38 00` |
+| Recall 2 | `0F 00` |
+| Save 2 | `39 00` |
+| Recall 3 | `0C 00` |
+| Save 3 | `3A 00` |
+| Recall 4 | `44 00` |
+| Save 4 | `45 00` |
+| Back massage | `89 00`, wait 100 ms, `8C 00` |
+| Leg massage | `8A 00`, wait 100 ms, `8B 00` |
+| Both massage zones | `89 00`, wait 100 ms, `8B 00` |
+| Automatic drive on | `89 3B 80 01` |
+| Automatic drive off | `89 3B 80 00` |
+<!-- /generated -->
+
+Favorites, Flat and All up support press-and-hold through the native card.
+Releasing ends that gesture using the conditional policy below; explicit Stop
+remains separate. Save buttons remain confirmation actions.
+
+Native Flat and All up use the initialize-all commands on Standard and Advanced,
+regardless of the actuator mask. TD3 uses the fixed Back + Legs pair. Explicit
+selected-section requests use the app's ordered selector. Four selected primary axes
+use All up/down, including when Base is also selected; other groups use the
+first matching pair from the shared selector. The native action accepts one
+direction per group. Mixed-direction SDK vectors and the modifier bit are
+covered by encoder tests but do not establish an app control.
+
+Selecting the same massage zone selection again sends global off. Two-write
+zone changes are separate GATT writes; interruption can leave the first write
+applied. Home Assistant clears its commanded selection when a sequence is
+incomplete, including cancellation during the gap between writes. The last
+commanded selection survives a routine Bluetooth release/reconnect; Reset defaults
+invalidates it. This is an assumption about our commands, not measured state:
+using another remote or app can change the bed independently. Automatic drive
+similarly shows the last delivered command, without
+claiming configuration reply confirmation. Rename uses HA's UTF-8 encoding
+(the Android artifact calls its runtime default charset), without a terminator,
+and reads the name back on the same connection. Names and favorite labels are
+saved locally before device writes; a failed write does not roll those settings
+back. Forgetting a favorite used by the alarm disables and clears that alarm.
+
+#### Timing
+
+<!-- generated:linak-tempur-timing -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Operation | Schedule |
+|---|---|
+| Movement and recall | Immediate, then 100 ms after each completed write |
+| Massage zone selection | First write, 100 ms delay, second write |
+| Store, light, wake, configuration, name | One write per action |
+| Alarm | Event, recurrence, query: ordered completed writes, no app ACK wait |
+| Reset | Clear alarm when supported, then reset |
+<!-- /generated -->
+
+Home Assistant bounds recalls and flat/all-up to 30 seconds. An admitted
+movement uses the primary-selected cleanup below on completion or cancellation.
+TD3 favorite release only ends refresh. For non-TD3 automatic recall, an ordinary
+card release leaves the refresh running within its separate 30-second bound,
+including after lease expiry. Explicit Stop ends it and dispatches the
+primary-selected packet. Explicit Stop can reopen a released paired receiver;
+gesture cleanup stays on its original client.
+Wake is not a proven physical stop. Cleanup stays on its captured BLE session.
+The app's UI guards, refresh watchdog and foreground/background lifecycle are
+not hardware guarantees: its repeat loop has no STOP finally and its delayed
+background disconnect has no pre-disconnect STOP.
+
+<!-- generated:linak-tempur-release -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Primary alarm | Primary TD3 | Gesture | Automatic drive | Cleanup |
+|---|---|---|---|---|
+| False | False | Movement | n/a | `FF 00` |
+| False | False | Recall | False | `FF 00` |
+| False | False | Recall | True | End refresh, no frame |
+| False | True | Movement | n/a | `FE 00` |
+| False | True | Recall | False | End refresh, no frame |
+| False | True | Recall | True | End refresh, no frame |
+| True | False | Movement | n/a | `FE 00` |
+| True | False | Recall | False | `FE 00` |
+| True | False | Recall | True | End refresh, no frame |
+| True | True | Movement | n/a | `FE 00` |
+| True | True | Recall | False | End refresh, no frame |
+| True | True | Recall | True | End refresh, no frame |
+<!-- /generated -->
+
+#### Notifications
+
+Absence of the reference service selects Standard. A zero mask selects TD3;
+a nonzero mask selects Advanced. Successful timer notification setup promotes
+Advanced with Alarm. No physical model names are inferred from those modes.
+
+Reference samples must be four bytes. Extension is unsigned little-endian and
+divided by 100; signed 12-bit speed is scaled to its absolute magnitude. Their
+physical units remain unknown. They appear only as disabled diagnostic speed
+sensors and reference attributes, without angle conversion or direction inference.
+Invalid-length samples clear these fields to zero. Control-error enum labels
+are diagnostic values, not a claim that every fault can occur on your bed.
+
+Configuration responses retain the artifact's signed length slice, ignoring
+the header and trailing bytes. Configuration reads in this SDK have no current
+app caller and are not controls. Automatic-drive writes wait only for GATT
+completion, without inventing a configuration acknowledgement requirement.
+
+Timer query parsing uses signed time, adds the high-time bit and reads exactly
+one action with signed lifetime/pause values. Timer events and malformed replies
+stay diagnostic. They do not confirm or roll back commanded alarm state.
+
+For Set alarm, select every weekday: one-time or selected-day requests are
+rejected because the source writes a fixed daily recurrence. The action writes
+the event, fixed daily recurrence (31 repeats,
+1440 minutes), then channel-one query, awaiting each GATT write. It does not wait
+for a timer ACK. A favorite alarm asks for the shared confirmation before enabling
+automatic drive. Clearing sends impulse-disable then clear; disabling automatic
+drive also clears an active favorite alarm. Reset clears local favorites and
+supported alarms before the reset command. Failure stops the remaining sequence;
+there is no invented rollback packet.
+
+Setting an alarm requires successful live timer discovery. Clearing a saved
+active alarm requires a writable timer endpoint and can proceed even when its
+notification subscription failed.
+
+The source computes the duration to today's requested time and discards its
+attempt to advance earlier times to tomorrow. This profile preserves that signed
+encoding quirk, including rounding fractional negative seconds down.
+Hardware interpretation of negative durations remains unverified.
+
+#### Services
+
+Use shared Set alarm, Name a favorite, Forget a favorite, rename and movement
+actions, plus the native massage controls. Use
+`adjustable_bed.linak_move_sections` for a bounded same-direction section group,
+including `base` when the live mask offers it. The two-section action also
+accepts matching directions. Both retain physical side targets.
+
+#### Evidence
+
+Based on the independently accepted full static contracts of Tempur Relax
+Control 6.1.3 (`269`). All 582 frozen frame, sequence, parser, routing and discovery
+cases are covered by the Tempur vector and runtime tests, with the full 256-byte
+mask census. Physical effects, units and firmware behavior remain unverified.
+
 ## Notes
 
 ### Light state
@@ -582,8 +817,9 @@ provisioning, cloud control or module firmware updates.
 
 ### App features
 
-Every app feature, grouped by builder, lifecycle and control; the
-byte-level command tables above remain exhaustive.
+Bed Control, Bed Connect and legacy-profile features are grouped below by
+builder, lifecycle and control. Dedicated app sections describe their own gates
+and release rules, including Tempur Relax Control.
 
 | Feature | Home Assistant |
 |---------|----------------|

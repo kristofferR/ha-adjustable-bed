@@ -28,6 +28,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
+from .app_profiles import pair_profile
 from .bed_traits import bed_traits
 from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController
 from .beds.cancellation import settled
@@ -80,6 +81,7 @@ from .paired_topology import (
     linked_readiness_required,
 )
 from .position_seek import SeekOutcome, SeekResult
+from .profile_id import entry_profile_id, profile_route
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -493,6 +495,10 @@ class PairedBedCoordinator:
                     child.request_command_cancel(resources=cancel_scope)
         entry_cancel = {s: admission.generation(s, command_scope) for s in target_sides}
 
+        if (reservation_kind is not CommandKind.INSPECTION and cancel_running
+                and any(resource == "*" or resource.startswith("motor:") for resource in command_scope)):
+            await self._async_prepare_primary_flags(targets)
+
         command_targets = capture_command_targets(child for _, child in targets)
 
         async def bound(child: BedChild) -> None:
@@ -530,6 +536,24 @@ class PairedBedCoordinator:
                 reservation_kind=reservation_kind,
             )
 
+    async def _async_prepare_primary_flags(self, targets: list[PairTarget]) -> None:
+        """Resolve a peer-dependent motor/STOP policy through the owning topology."""
+        if not any(side == SIDE_RIGHT for side, _ in targets):
+            return
+        primary = self._children.get(SIDE_LEFT)
+        right = self._children[SIDE_RIGHT]
+        route = profile_route(entry_profile_id(right.entry.data)) if getattr(right, "entry", None) is not None else None
+        policy = pair_profile(route.bed_type, route.variant) if route is not None else None
+        if primary is not None and policy is not None and policy.ordered_pair and (
+            primary.capability_controller is None
+            or not primary.capability_controller.controller_entity_discovery_complete
+        ):
+            async def inspect_primary(child: BedChild) -> None:
+                async def ready(controller: BedController) -> None:
+                    await controller.prepare_for_movement()
+                await child.async_execute_controller_query(ready, skip_disconnect=True)
+            await self.async_inspect_child_operation(inspect_primary, side=SIDE_LEFT, resource="configuration")
+
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""
         targets = self._topology.cancellation_targets(self.targets_for(side))
@@ -550,6 +574,8 @@ class PairedBedCoordinator:
             if not remacro_side_lacks_global_stop(child)
         ]
         self._cancel_before_stop(targets)
+        if not CONTROLLER_GESTURE_RELEASE.get():
+            await self._async_prepare_primary_flags(targets)
         command_targets = capture_command_targets(child for _, child in targets)
         with command_target_scope(command_targets):
             targets, admitted, errors = self._admit_sequential_stops(targets, ALL_COMMAND_RESOURCES)
@@ -609,7 +635,8 @@ class PairedBedCoordinator:
     ) -> None:
         """Release the command owner before STOP waits for a connection lane."""
         if self.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL and any(
-            getattr(child.capability_controller, "reconnect_for_explicit_stop", False) is True
+            getattr(child, "reconnect_for_explicit_stop",
+                    getattr(child.capability_controller, "reconnect_for_explicit_stop", False)) is True
             for _side, child in targets
         ):
             # A released receiver's STOP needs the one link even when the
@@ -667,6 +694,8 @@ class PairedBedCoordinator:
         # Like an ordinary motor STOP, preempt any motion holding the writer.
         scope = command_resources("motor:*" if resource.startswith("motor:") else resource)
         self._cancel_before_stop(targets, scope)
+        if not CONTROLLER_GESTURE_RELEASE.get():
+            await self._async_prepare_primary_flags(targets)
         command_targets = capture_command_targets(child for _, child in targets)
         with command_target_scope(command_targets):
             targets, admitted, errors = self._admit_sequential_stops(targets, scope)

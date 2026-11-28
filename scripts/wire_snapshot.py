@@ -66,7 +66,7 @@ import os
 import subprocess
 import sys
 import time
-from collections.abc import Awaitable, Callable, Generator, Iterator
+from collections.abc import Awaitable, Callable, Generator, Iterator, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from types import SimpleNamespace, coroutine
@@ -440,9 +440,9 @@ def plan_commands(controller: Any) -> list[Command]:
             f"stop:{spec.key}_close", _stopped(spec.close_fn, scheduled=scheduled, after_s=after_s), True, movement=True
         ))
     for spec in _value(controller, "controller_button_specs", ()):
-        # For Leva the gesture button only cancels a hold. The movement and
+        # These gesture buttons only cancel a hold. The movement and
         # STOP phases already capture that hold's real release writes.
-        if spec.key == "leva_release" and spec.release_only:
+        if spec.key in {"leva_release", "tempur_release"} and spec.release_only:
             continue
         plan.append(Command(f"button:{spec.key}", spec.press_fn, True))
     for spec in _value(controller, "controller_select_specs", ()):
@@ -608,6 +608,22 @@ def plan_commands(controller: Any) -> list[Command]:
         plan.extend((Command("light_rgb", _method("light_rgb", (1, 2, 3)), True),
                      Command("repeat_alarm", _method("configure_alarm", alarm), True),
                      Command("delete_alarm", _method("delete_alarm", 1), True)))
+    if (controller._coordinator.bed_type == "linak"
+            and getattr(controller, "_profile", None) == "tempur_relax"):
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        for label, request in (
+            ("tempur_alarm_daily", AlarmRequest(
+                enabled=True, weekdays=tuple(range(7)), hour=7, minute=30, wake_action="memory_4", massage=True,
+                confirm_custom_position=True, reference_time=FROZEN_BASE,
+            )),
+            ("tempur_alarm_clear", AlarmRequest(enabled=False, reference_time=FROZEN_BASE)),
+            ("tempur_alarm_signed_today", AlarmRequest(
+                enabled=True, weekdays=tuple(range(7)), hour=0, minute=0, massage=True, reference_time=FROZEN_BASE,
+            )),
+        ):
+            plan.append(Command(label, _method("configure_alarm", request), True))
+        plan.append(Command("tempur_name_favorite", _method("name_memory", 2, "Reading"), True))
     return plan
 
 
@@ -1377,6 +1393,11 @@ class Coordinator:
     async def async_write_app_state(self, *_: Any) -> None:
         return None
 
+    async def async_update_app_state(
+        self, controller: Any, update: Callable[[dict[str, Any]], Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        return dict(update(dict(controller.persisted_app_state)))
+
     async def async_note_control_access_succeeded(self) -> None:
         return None
 
@@ -1979,6 +2000,7 @@ ROUTE_REPLIES: dict[str, dict[str, str]] = {
     "kaidi:floyd": {"write:03fffffffffe": KAIDI_PING_REPLY},
     "linak:aa_control_my_bed": {"read:99fa0029-338a-1024-8a49-009c0215f78a": "c0"},
     "linak:carpe_diem": {"read:99fa0029-338a-1024-8a49-009c0215f78a": "c0"},
+    "linak:tempur_relax": {"read:99fa0029-338a-1024-8a49-009c0215f78a": "f8"},
 }
 # Large variant sets are sampled: the first keys plus the last.
 SAMPLED_ROUTES: dict[str, int] = {"adjustamattress": 3}

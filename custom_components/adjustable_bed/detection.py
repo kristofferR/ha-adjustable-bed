@@ -269,6 +269,7 @@ from .const import (
     LINAK_POSITION_SERVICE_UUID,
     LINAK_VARIANT_AA_CONTROL_MY_BED,
     LINAK_VARIANT_CARPE_DIEM,
+    LINAK_VARIANT_TEMPUR_RELAX,
     LOGICDATA_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
@@ -935,6 +936,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     ("ai_bed", "305"): "AI Bed: primary 305 subset",
     (BED_TYPE_LINAK, LINAK_VARIANT_AA_CONTROL_MY_BED): "AA Control My Bed app",
     (BED_TYPE_LINAK, LINAK_VARIANT_CARPE_DIEM): "Carpe Diem Beds app",
+    (BED_TYPE_LINAK, LINAK_VARIANT_TEMPUR_RELAX): "Tempur Relax Control app",
     (BED_TYPE_DORSAL, DORSAL_ROOMI_S655_PLUS): DORSAL_ROUTES[DORSAL_ROOMI_S655_PLUS],
     **{("majestichome", profile): f"Majestic Home ({label})" for profile, label in MAJESTICHOME_PROFILES.items()},
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"

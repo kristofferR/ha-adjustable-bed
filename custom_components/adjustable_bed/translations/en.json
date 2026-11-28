@@ -928,7 +928,8 @@
       "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side.",
       "alya_layout_invalid": "The selected Alya layout is missing its required Bluetooth write/notify roles. Choose the layout shown in your app.",
       "ergobq_identity": "Select an ErgoBQ BED product, a valid six-byte serial (or blank), and a channel stamp of at most 510 UTF-8 bytes.",
-      "mattresspoint_gatt": "The Bluetooth device lacks the write-without-response and status channels MattressPoint needs. Check the device and selected app."
+      "mattresspoint_gatt": "The Bluetooth device lacks the write-without-response and status channels MattressPoint needs. Check the device and selected app.",
+      "tempur_product_not_in_app": "This advertised SDK product is excluded by the Tempur Relax Control app. Choose the app for your device."
     }
   },
   "options": {
@@ -1794,6 +1795,7 @@
   },
   "entity": {
     "button": {
+      "release_held_control": {"name": "Release held control"},
       "konfurt_massage": {"name": "Toggle massage"},
       "konfurt_massage_head": {"name": "Cycle head massage"},
       "konfurt_massage_foot": {"name": "Cycle feet massage"},
@@ -10427,9 +10429,42 @@
         }
       }
     },
+    "name_memory": {
+      "name": "Name a favorite",
+      "description": "Save an app-local label for a favorite position.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "preset": {
+          "name": "Favorite"
+        },
+        "name": {
+          "name": "Name"
+        },
+        "side": {
+          "name": "Bed side"
+        }
+      }
+    },
+    "forget_memory": {
+      "name": "Forget a favorite",
+      "description": "Remove an app-local favorite and turn off an alarm that uses it. The saved bed position is not erased.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "preset": {
+          "name": "Favorite"
+        },
+        "side": {
+          "name": "Bed side"
+        }
+      }
+    },
     "linak_move_sections": {
-      "name": "Move selected Carpe Diem sections",
-      "description": "Move the selected bed sections in one direction. Three sections follow the app priority: back/legs, back/feet, back/head, legs/feet, legs/head, head/feet.",
+      "name": "Move selected Linak sections",
+      "description": "Move available sections of a Carpe Diem Beds or Tempur Relax Control bed in one direction, using the app selection order.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -10437,7 +10472,7 @@
         },
         "sections": {
           "name": "Sections",
-          "description": "Select the sections to move."
+          "description": "Select available sections. Base is supported by Tempur Relax Control when the bed reports it."
         },
         "direction": {
           "name": "Direction",
@@ -12756,6 +12791,8 @@
     "roewa_hold_duration": {"message": "Choose a hold duration from 1 to 60000 milliseconds."},
     "roewa_layout": {"message": "Choose a RÖWA remote with two, three or four motors."},
     "roewa_name": {"message": "Use a nonempty Bluetooth name of at most {limit} UTF-8 bytes for this Bluetooth connection."},
+    "tempur_name_readback": {"message": "The name was written, but the device name could not be read back. The saved name is retained."},
+    "tempur_alarm_daily": {"message": "This app programs a daily alarm. Select every day."},
     "konfurt_gatt": {"message": "KONFURT needs writable FFE9 in FFE5 and notifying FFE4 in FFE0. Check the selected app and Bluetooth device."},
     "konfurt_layout": {"message": "Choose the 2, 3 or 4 motor layout shown in the KONFURT app."},
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},

@@ -59,6 +59,7 @@ from .position_estimate import (
     track_motor_command,
 )
 from .position_estimate_entities import async_setup_estimate_buttons
+from .profile_id import entry_profile_id
 from .runtime_data import entry_runtime
 
 if TYPE_CHECKING:
@@ -819,7 +820,12 @@ async def async_setup_entry(
                 entities.append(PairedBedStopButton(coordinator))
             # Combined buttons read both children's live capabilities, so pass the
             # raw children (the button itself dispatches via the parent, side=both).
-            entities.extend(_combined_button_entities_for(coordinator, children))
+            combined = list(_combined_button_entities_for(coordinator, children))
+            entities.extend(combined)
+            if any(entity.extra_state_attributes.get("hold_release_button_key") == "release_held_control"
+                   for entity in combined
+                   if isinstance(entity, (PairedBedCombinedButton, PairedBedCombinedMotorButton))):
+                entities.append(PairedBedGestureReleaseButton(coordinator))
             return entities
 
         if any(_has_dynamic_buttons(runtime) for runtime in static_runtimes):
@@ -855,7 +861,10 @@ async def async_setup_entry(
 
 def _has_dynamic_buttons(runtime: EntityRuntime) -> bool:
     controller = runtime.capability_controller
-    return controller is not None and controller.has_dynamic_buttons
+    return (
+        controller.has_dynamic_buttons if controller is not None
+        else runtime.bed_type == "linak" and entry_profile_id(runtime.entry.data) == "linak:tempur_relax"
+    )
 
 
 def _async_follow_motion_bed_module_actions(
@@ -1343,7 +1352,9 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         # "Memory 3". Setting _attr_name overrides the translated name; the
         # translation still applies whenever the bed reports nothing.
         slot_name = _discovered_memory_slot_name(coordinator, description)
-        if slot_name is not None:
+        controller = coordinator.controller or coordinator.capability_controller
+        # Editable labels must fall back to the translation after being forgotten.
+        if slot_name is not None and getattr(controller, "supports_memory_naming", False) is not True:
             self._attr_name = slot_name
 
     @property
@@ -1477,7 +1488,8 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             controller = self._coordinator.capability_controller
             if controller is not None:
                 with self._side_scope():
-                    controller.on_gesture_release()
+                    if controller.on_gesture_release() is False:
+                        return
             token = CONTROLLER_GESTURE_RELEASE.set(True)
             try:
                 await self._coordinator.async_stop_command()
@@ -1579,6 +1591,25 @@ class PairedBedStopButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         """Stop both sides."""
         _LOGGER.info("Combined stop pressed for paired bed %s", self._coordinator.name)
         await self._coordinator.async_stop_command(side=SIDE_BOTH)
+
+
+class PairedBedGestureReleaseButton(PairedBedStopButton):
+    """Release an admitted Both gesture without opening a new STOP session."""
+
+    _attr_translation_key = "release_held_control"
+    _attr_entity_registry_visible_default = False
+
+    def __init__(self, coordinator: PairedBedCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = _paired_entity_unique_id(coordinator, "gesture_release_both")
+        self._card = CARD_HIDDEN
+
+    async def async_press(self) -> None:
+        token = CONTROLLER_GESTURE_RELEASE.set(True)
+        try:
+            await self._coordinator.async_stop_command(side=SIDE_BOTH)
+        finally:
+            CONTROLLER_GESTURE_RELEASE.reset(token)
 
 
 class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
@@ -1693,6 +1724,17 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
                     )
             return attributes
         action = self.entity_description.key
+        controllers = [child.capability_controller for child in self._coordinator.children.values()]
+        holds = [controller.standard_button_hold_spec(action) if controller else None for controller in controllers]
+        if holds and (held := holds[0]) is not None and all(hold == held for hold in holds):
+            lease = _paired_hold_lease_attributes(self._coordinator, control=held.control)
+            if lease:
+                attributes.update(
+                    held_control=held.control, hold_start_delay_ms=held.start_delay_ms,
+                    hold_release_delay_ms=held.release_delay_ms,
+                    hold_release_button_key=held.release_button_key or "stop_both", **lease,
+                )
+                return attributes
         motor = next(
             (candidate for candidate in ("head", "legs") if action.startswith(f"{candidate}_")),
             None,
@@ -1890,11 +1932,21 @@ def _paired_hold_lease_attributes(
         or len(coordinator.children) != 2
     ):
         return {}
-    return hold_lease_attributes(
-        (child.capability_controller for child in coordinator.children.values()),
+    controllers = [child.capability_controller for child in coordinator.children.values()]
+    attributes = hold_lease_attributes(
+        controllers,
         motor,
         control=control,
     )
+    if motor is not None and attributes and all(
+        controller is not None and any(
+            spec.release_only and spec.translation_key == "release_held_control"
+            for spec in controller.controller_button_specs
+        )
+        for controller in controllers
+    ):
+        attributes["hold_release_button_key"] = "release_held_control"
+    return attributes
 
 
 def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bool:

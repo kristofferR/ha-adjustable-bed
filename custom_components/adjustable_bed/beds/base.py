@@ -1392,8 +1392,8 @@ class BedController(GattWriter):
     def on_connection_release(self, reason: str) -> None:
         """End explicit user/session intent before releasing connection resources."""
 
-    def on_gesture_release(self) -> None:
-        """Mark the current admitted gesture as released before STOP invalidates it."""
+    def on_gesture_release(self) -> bool | None:
+        """Mark release before STOP; False retains a separately bounded operation."""
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -1715,6 +1715,20 @@ class BedController(GattWriter):
         Override in subclasses that support programming.
         """
         return False
+
+    @property
+    def supports_memory_naming(self) -> bool:
+        """Whether favorite labels can be edited through the shared action."""
+        return False
+
+    async def name_memory(self, slot: int, name: str) -> None:
+        raise self.not_supported("favorite names")
+
+    async def forget_memory(self, slot: int) -> None:
+        raise self.not_supported("forgetting favorites")
+
+    async def prepare_device_rename(self, name: str) -> None:
+        """Persist app-owned name intent before the shared action writes devices."""
 
     @property
     def memory_slot_names(self) -> tuple[str | None, ...]:

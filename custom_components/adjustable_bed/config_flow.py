@@ -3766,6 +3766,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         manufacturer_data: dict[int, bytes] | None = None,
     ) -> str | None:
         """Return a form error when the chosen app does not list the bed's model."""
+        if bed_type == BED_TYPE_LINAK and protocol_variant == "tempur_relax":
+            from .profiles.linak import tempur_advertisement_allowed
+
+            info = bluetooth.async_last_service_info(self.hass, address, connectable=True)
+            data = manufacturer_data if manufacturer_data is not None else info.manufacturer_data if info else None
+            return None if tempur_advertisement_allowed(data) else "tempur_product_not_in_app"
         if bed_type != BED_TYPE_REMACRO:
             return None
         problem, _ = remacro_entry_problem(
@@ -4388,6 +4394,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             drawn = variant
             if len(routes) >= 2 and chosen in routes:
                 variant = chosen
+            if bed_type == BED_TYPE_LINAK and variant == "tempur_relax":
+                await async_import_modules(self.hass, "codec.linak", "profiles.linak")
             entry, errors = self._new_bed_entry(submitted, variant, hidden, signals, drawn)
             if not errors:
                 self._final_settings_pending = False

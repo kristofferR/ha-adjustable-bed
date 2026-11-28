@@ -4527,7 +4527,7 @@ linak_move_sections:
       selector:
         select:
           multiple: true
-          options: [back, legs, head, feet]
+          options: [back, legs, head, feet, base]
     direction:
       required: true
       selector:
@@ -5097,3 +5097,49 @@ ai_bed:
       selector:
         text:
           type: password
+
+name_memory:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    preset:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 255
+          mode: box
+    name:
+      required: true
+      selector:
+        text:
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+
+forget_memory:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    preset:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 255
+          mode: box
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side

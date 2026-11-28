@@ -148,6 +148,7 @@ export function bedEntitiesForDevice(
     // A controller-owned gesture ends through its own release button, like a held cover.
     const ownRelease = typeof attributes?.hold_release_button_key === "string";
     const releaseButton = heldReleaseButton(hass, id);
+    if (holdLease && releaseButton) item.releaseButton = releaseButton;
     if (
       typeof control === "string" &&
       typeof startDelayMs === "number" && Number.isFinite(startDelayMs) && startDelayMs >= 0 &&

@@ -42,6 +42,7 @@ from uuid import uuid4
 
 from homeassistant.exceptions import HomeAssistantError
 
+from .app_profiles import pair_profile
 from .beds.cancellation import settled as settle_cancellation
 from .command_scheduler import (
     PAIRED_SESSION_BOUND_ABORTS,
@@ -50,7 +51,9 @@ from .command_scheduler import (
     CommandOutcome,
     PreparedCommandInvalidated,
     command_resources,
+    current_command_context,
     more_commands_follow,
+    note_frame_skipped,
 )
 from .const import (
     PAIR_CONNECTION_MODE_CONCURRENT,
@@ -61,6 +64,7 @@ from .const import (
     SIDE_RIGHT,
 )
 from .errors import failed, keyed
+from .profile_id import entry_profile_id, profile_route
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -731,6 +735,60 @@ class _SideLaneTopology(PairTopology):
         """Run one command across several sides under the group lock."""
 
 
+class _OrderedFrames:
+    """Order each linked callback while both existing reservations own their links."""
+
+    def __init__(self, sides: list[str]) -> None:
+        self.sides = sides
+        self.turn = 0
+        self.condition = asyncio.Condition()
+        self.round = asyncio.get_running_loop().create_future()
+        self.failure: BaseException | None = None
+
+    async def run(
+        self, side: str, write: Callable[[], Awaitable[None]], *, cancel: asyncio.Event,
+    ) -> None:
+        frame = asyncio.create_task(self._run(side, write))
+        cancelled = asyncio.create_task(cancel.wait())
+        try:
+            await asyncio.wait((frame, cancelled), return_when=asyncio.FIRST_COMPLETED)
+            if cancel.is_set():
+                frame.cancel()
+            await frame
+        finally:
+            cancelled.cancel()
+            if not frame.done():
+                frame.cancel()
+            await asyncio.gather(frame, cancelled, return_exceptions=True)
+
+    async def _run(self, side: str, write: Callable[[], Awaitable[None]]) -> None:
+        try:
+            async with self.condition:
+                await self.condition.wait_for(lambda: self.failure is not None or self.sides[self.turn] == side)
+                if self.failure is not None:
+                    note_frame_skipped()
+                    raise self.failure
+                completed = self.round
+            await write()
+            async with self.condition:
+                self.turn += 1
+                if self.turn == len(self.sides):
+                    self.turn = 0
+                    completed.set_result(None)
+                    self.round = asyncio.get_running_loop().create_future()
+                self.condition.notify_all()
+            await asyncio.shield(completed)
+            if self.failure is not None:
+                raise self.failure
+        except BaseException as error:
+            async with self.condition:
+                self.failure = error
+                if not self.round.done():
+                    self.round.set_result(None)
+                self.condition.notify_all()
+            raise
+
+
 class ConcurrentTwoLinkTopology(_SideLaneTopology):
     """Two receivers, each on its own live link."""
 
@@ -787,6 +845,22 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
             return
         group_id = uuid4().hex
         child_by_side = dict(targets)
+        def ordered(child: BedChild) -> bool:
+            if getattr(child, "entry", None) is None:
+                return False
+            route = profile_route(entry_profile_id(child.entry.data))
+            policy = pair_profile(route.bed_type, route.variant)
+            return policy is not None and policy.ordered_pair
+
+        frames = _OrderedFrames([side for side, _ in targets]) if all(ordered(child) for _, child in targets) and reservation_kind is not CommandKind.INSPECTION else None
+        # One admitted gesture has one tap budget and cadence, owned by primary.
+        pulse_plan: tuple[int, int] | None = None
+        if frames is not None:
+            from .coordinator import AdjustableBedCoordinator
+
+            primary = targets[0][1]
+            assert isinstance(primary, AdjustableBedCoordinator)
+            pulse_plan = (primary.motor_pulse_count, primary.motor_pulse_delay_ms)
         prepared: dict[str, tuple[BedChild, CommandHandle]] = {}
         committed = False
         result_tasks: dict[str, asyncio.Task[None]] = {}
@@ -842,6 +916,14 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                     return
 
                 async def prepare_side(side: str, child: BedChild) -> CommandHandle | None:
+                    async def operate() -> None:
+                        if frames is not None and resources == frozenset({"configuration"}):
+                            context = current_command_context()
+                            assert context is not None
+                            await frames.run(side, lambda: op(child), cancel=context.cancel_event)
+                        else:
+                            await op(child)
+
                     # STOP or newer side work may run before this task's first turn.
                     if admission.admission_was_cancelled(
                         targets, resources, entry_cancel, expected_stop_epochs
@@ -854,19 +936,19 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                     )
                     if reservation_kind is CommandKind.INSPECTION:
                         return await child.async_prepare_command_operation(
-                            lambda child=child: op(child), resources=resources,
+                            operate, resources=resources,
                             cancel_running=False, kind=CommandKind.INSPECTION,
                             group_id=group_id, expected_stop_epoch=expected_stop_epoch,
                         )
                     if expected_stop_epoch is None:
                         return await child.async_prepare_command_operation(
-                            lambda child=child: op(child),
+                            operate,
                             resources=resources,
                             cancel_running=cancel_running,
                             group_id=group_id,
                         )
                     return await child.async_prepare_command_operation(
-                        lambda child=child: op(child),
+                        operate,
                         resources=resources,
                         cancel_running=cancel_running,
                         group_id=group_id,
@@ -963,7 +1045,11 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                 # No controller command coroutine has run before this point. Commit every
                 # ready handle synchronously so neither side can observe a partial
                 # group caused by another await between releases.
-                for child, handle in prepared.values():
+                for side, (child, handle) in prepared.items():
+                    if frames is not None:
+                        assert pulse_plan is not None
+                        handle.context.pulse_count, handle.context.pulse_delay_ms = pulse_plan
+                        handle.context.paired_frame = partial(frames.run, side, cancel=handle.context.cancel_event)
                     child.commit_prepared_command(handle)
                 committed = True
 
@@ -1498,6 +1584,9 @@ class SequentialTwoLinkTopology(PairTopology):
 
     @staticmethod
     def _reconnects_for_stop(child: BedChild) -> bool:
+        configured = getattr(child, "reconnect_for_explicit_stop", None)
+        if isinstance(configured, bool):
+            return configured
         controller = child.capability_controller
         return getattr(controller, "reconnect_for_explicit_stop", False) is True
 

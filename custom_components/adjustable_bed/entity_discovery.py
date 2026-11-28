@@ -8,6 +8,7 @@ from homeassistant.helpers.entity import Entity
 from .beds.lifecycle import CapabilitySnapshotPolicy
 from .entity_runtime import EntityRuntime, controller_side_scope
 from .entity_sweep import PlatformEntities
+from .profile_id import entry_profile_id
 
 
 def async_setup_dynamic_entities(
@@ -65,6 +66,8 @@ def async_setup_dynamic_entities(
     for runtime in (coordinator, *additional_coordinators):
         controller = runtime.capability_controller
         if controller is None:
+            if runtime.bed_type == "linak" and entry_profile_id(runtime.entry.data) == "linak:tempur_relax":
+                entry.async_on_unload(runtime.register_controller_state_callback(lambda _state: discover()))
             continue
         policy = controller.capability_snapshot_policy
         if isinstance(policy, CapabilitySnapshotPolicy) and policy.reconcile_on_persistent_link:
