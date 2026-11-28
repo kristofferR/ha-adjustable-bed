@@ -4344,6 +4344,24 @@
       "kingkoil_feet_down": {
         "name": "Foot down"
       },
+      "dreamotion_smart_back": {
+        "name": "Cycle back massage"
+      },
+      "dreamotion_smart_foot": {
+        "name": "Cycle foot massage"
+      },
+      "dreamotion_smart_pattern": {
+        "name": "Cycle massage pattern"
+      },
+      "dreamotion_smart_save_light": {
+        "name": "Save light settings"
+      },
+      "dreamotion_smart_preview_light": {
+        "name": "Preview light settings"
+      },
+      "dreamotion_smart_refresh": {
+        "name": "Refresh settings"
+      },
       "amada_reset": {
         "name": "Reset saved positions"
       },
@@ -6276,6 +6294,21 @@
       "jobs_wake_alarm": {
         "name": "Wake alarm type"
       },
+      "dreamotion_smart_back": {
+        "name": "Back massage intensity"
+      },
+      "dreamotion_smart_foot": {
+        "name": "Foot massage intensity"
+      },
+      "dreamotion_smart_pattern": {
+        "name": "Massage pattern"
+      },
+      "dreamotion_smart_timer": {
+        "name": "Massage timer"
+      },
+      "dreamotion_smart_seconds": {
+        "name": "Timed light duration"
+      },
       "amada_massage_time_bucket": {
         "name": "Massage timer bucket"
       },
@@ -6616,6 +6649,9 @@
       },
       "flexispot_massage": {
         "name": "Massage"
+      },
+      "dreamotion_smart_sensor": {
+        "name": "Human detection"
       }
     },
     "binary_sensor": {
@@ -6931,6 +6967,15 @@
       }
     },
     "number": {
+      "innova_control_aroma_start_2": {
+        "name": "Aroma startup 2"
+      },
+      "innova_control_aroma_start_3": {
+        "name": "Aroma startup 3"
+      },
+      "innova_control_aroma_pause_3": {
+        "name": "Aroma pause 3"
+      },
       "smart_base_lamp_seconds": {"name": "Light timeout (0 keeps on)"},
       "thrivesleep_light_seconds": {
         "name": "Light timer (0 keeps on)"
@@ -7513,6 +7558,17 @@
           "none": "No position",
           "memory_1": "Memory A",
           "memory_2": "Memory B"
+        }
+      },
+      "innova_control_timer_progress": {
+        "name": "Timer slider position",
+        "state": {
+          "0": "0",
+          "1": "1",
+          "2": "2",
+          "3": "3",
+          "4": "4",
+          "5": "5"
         }
       },
       "suta_king_koil_massage_mode": {
@@ -8461,6 +8517,44 @@
           "pattern_3": "Pattern 3",
           "pattern_4": "Pattern 4"
         }
+      },
+      "dreamotion_smart_mode": {
+        "name": "Vibration mode",
+        "state": {
+          "inherent": "Inherent frequency",
+          "acoustic": "Acoustic"
+        }
+      },
+      "dreamotion_smart_page": {
+        "name": "Light settings",
+        "state": {
+          "timed": "Timed light",
+          "presets": "Saved light entries"
+        }
+      },
+      "dreamotion_smart_slot": {
+        "name": "Saved light entry",
+        "state": {
+          "1": "1",
+          "2": "2",
+          "3": "3"
+        }
+      },
+      "dreamotion_smart_duration": {
+        "name": "Timed light duration",
+        "state": {
+          "0": "0 seconds",
+          "60": "60 seconds",
+          "120": "120 seconds",
+          "180": "180 seconds",
+          "240": "240 seconds",
+          "300": "300 seconds",
+          "600": "600 seconds",
+          "900": "900 seconds",
+          "1200": "1200 seconds",
+          "1500": "1500 seconds",
+          "1800": "1800 seconds"
+        }
       }
     },
     "climate": {
@@ -8485,6 +8579,48 @@
     }
   },
   "services": {
+    "innova_control": {
+      "name": "Innova Control settings",
+      "description": "Change direct Bluetooth settings offered by the selected bed layout. Use Set alarm for alarms. Query refreshes accessory availability.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Bed to control."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed to control."
+        },
+        "operation": {
+          "name": "Setting",
+          "description": "Setting to change."
+        },
+        "rgb_color": {
+          "name": "Color",
+          "description": "Red, green and blue values, each from 0 to 255."
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "0 keeps the light on. Otherwise choose 1 to 300 seconds."
+        },
+        "aroma_times": {
+          "name": "Aromatherapy times",
+          "description": "Mode 2 minutes (1 to 60), mode 3 minutes (1 to 60), and pause hours (1 to 12)."
+        },
+        "progress": {
+          "name": "Timer slider position",
+          "description": "Exact app slider position (0 to 5). Physical durations are unverified."
+        },
+        "popup": {
+          "name": "Massage timer button",
+          "description": "Choose the timer button shown by this layout."
+        },
+        "group": {
+          "name": "Bluetooth group",
+          "description": "Four printable ASCII characters. Joining or leaving disconnects the selected receiver after the write."
+        }
+      }
+    },
     "ifit_save_preset": {
       "name": "Save iFit preset",
       "description": "Hold Flat and the selected preset together for three seconds, then send its save command. This moves the bed before saving. Hardware save persistence is unverified.",
@@ -12478,6 +12614,21 @@
     }
   },
   "exceptions": {
+    "dreamotion_smart_refresh": {
+      "message": "Refresh {setting} settings, then try again."
+    },
+    "dreamotion_smart_inherent": {
+      "message": "Select inherent vibration mode before adjusting massage."
+    },
+    "dreamotion_smart_session": {
+      "message": "The bed disconnected or its Bluetooth session changed. Reconnect and try again."
+    },
+    "dreamotion_smart_gatt": {
+      "message": "The bed's Bluetooth controls could not be identified. Reconnect and try again."
+    },
+    "dreamotion_smart_duration": {
+      "message": "Choose one of the supported light durations."
+    },
     "smart_base_product": {"message": "Choose the Smart Base 200IV2 / A8RM product in Reconfigure."},
     "smart_base_gatt": {"message": "The Smart Base 200IV2 route requires its FEE9 service and exact write and notification characteristics."},
     "smart_base_settings": {"message": "Reconnect and refresh bed settings. The bed must report this feature on the current connection; choose a valid color or 0 to 300 seconds."},
@@ -14490,6 +14641,7 @@
         "majestichome": "Majestic Home app",
         "lp2": "L&P Adjustable Base app",
         "homezone": "Home Zone Adjustable app",
+        "innova2": "Innova Control app",
         "bedsmart": "BedSmart / X-Series app",
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",

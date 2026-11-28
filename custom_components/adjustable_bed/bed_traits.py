@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_DREAMOTION_SMART,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ERGOMOTION,
@@ -284,6 +285,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_SHUDA: replace(_NO_ANGLES, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sleeptime": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "intellibed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "powersbedding": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "hestia_motion": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "ultramatic_smart_bed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
@@ -418,6 +420,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_LIMOSS: BedTraits(position_feedback=True, connection_scoped_state=True),
     BED_TYPE_LIMOSS_REMOTE: _NO_ANGLES,
     BED_TYPE_AMBIENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    BED_TYPE_DREAMOTION_SMART: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, cancellation_only_stop=True),
     BED_TYPE_VINDO: replace(_NO_ANGLES, owns_device_info_reads=True),
     BED_TYPE_LINAK: BedTraits(
         position_feedback=True,
@@ -640,10 +643,10 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "richmat_tx", "rize_home", "rize_remedy_ii", "row_control", "ruf_betten",
      "restful", "serenity", "serta_mp_remote", "simmons", "sleep_number", "sleepstar",
      "sleeptracker", "sleepys_box15", "sleepys_box24", "smart_comfort_synargy",
-     "awmotion", "dreamsense", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
+     "awmotion", "dreamsense", "dreamotion_smart", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada", "ormatek", "powersbedding",
+     "wsilver_products", "yamada", "ormatek", "powersbedding", "intellibed",
     }
 )
 

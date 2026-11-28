@@ -20,6 +20,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -43,13 +44,16 @@ def test_wire_bytes_match_committed_snapshot(hash_seed: str) -> None:
     result = subprocess.run(
         [sys.executable, str(SCRIPT), "--probe"],
         env={**os.environ, "PYTHONHASHSEED": hash_seed},
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=None if os.environ.get("WIRE_SNAPSHOT_VERBOSE") else subprocess.PIPE,
         text=True,
         cwd=REPO_ROOT,
         check=False,
     )
     assert result.returncode == 0, (
-        f"Wire capture failed for hash seed {hash_seed}:\n" + result.stderr[-6000:]
+        f"Wire capture failed for hash seed {hash_seed}:\n"
+        + result.stdout[-6000:]
+        + (result.stderr or "")[-2000:]
     )
     committed = (REPO_ROOT / "tests" / "fixtures" / "wire_snapshot.json").read_text()
     diff = difflib.unified_diff(
@@ -59,6 +63,39 @@ def test_wire_bytes_match_committed_snapshot(hash_seed: str) -> None:
         "Bytes on the wire changed. Review the diff, and if the change is deliberate "
         "regenerate with `uv run --no-sync python scripts/wire_snapshot.py`:\n"
         + "\n".join(line[:240] for _, line in zip(range(20), diff, strict=False))
+    )
+
+
+@pytest.mark.parametrize("hash_seed", ("0", "1"))
+@pytest.mark.parametrize("verbose", [False, True])
+@pytest.mark.parametrize("returncode", [0, 1])
+def test_wire_subprocess_diagnostic_routing(monkeypatch, verbose, returncode, hash_seed) -> None:
+    if verbose:
+        monkeypatch.setenv("WIRE_SNAPSHOT_VERBOSE", "1")
+    else:
+        monkeypatch.delenv("WIRE_SNAPSHOT_VERBOSE", raising=False)
+    stderr = None if verbose else "snapshot stderr"
+    stdout = "snapshot stdout" if returncode else (
+        REPO_ROOT / "tests" / "fixtures" / "wire_snapshot.json"
+    ).read_text()
+    run = Mock(return_value=subprocess.CompletedProcess([], returncode, stdout, stderr))
+    monkeypatch.setattr(subprocess, "run", run)
+
+    if returncode:
+        with pytest.raises(AssertionError, match="snapshot stdout") as error:
+            test_wire_bytes_match_committed_snapshot(hash_seed)
+        assert ("snapshot stderr" in str(error.value)) is (not verbose)
+    else:
+        test_wire_bytes_match_committed_snapshot(hash_seed)
+
+    run.assert_called_once_with(
+        [sys.executable, str(SCRIPT), "--probe"],
+        env={**os.environ, "PYTHONHASHSEED": hash_seed},
+        stdout=subprocess.PIPE,
+        stderr=None if verbose else subprocess.PIPE,
+        text=True,
+        cwd=REPO_ROOT,
+        check=False,
     )
 
 

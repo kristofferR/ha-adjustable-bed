@@ -254,6 +254,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "ai_bed": SideProfile("AI Bed explicit route", variant_owned=True),
     "suta": SideProfile("SUTA Smart Home name-selected layout"),
     "suta_king_koil": SideProfile("King Koil SUTA app"),
+    "intellibed": SideProfile("Intellibed remote", variant_owned=True),
     "powersbedding": SideProfile("PowersBedding", frozenset({CONF_BLE_DEVICE_NAME})),
     "hestia_motion": SideProfile("Hestia Motion"),
     "truemotion": SideProfile("trueMotion Bluetooth name"),
@@ -278,6 +279,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "majestichome": SideProfile("Majestic Home", variant_owned=True),
     BED_TYPE_OKIMIKI: SideProfile("Okimiki product", variant_owned=True),
     BED_TYPE_LIKIMIO: SideProfile("Likimio", variant_owned=True),
+    "dreamotion_smart": SideProfile("Dreamotion Smart", frozenset()),
     "awmotion": SideProfile("AW MOTION", frozenset(), variant_owned=True),
     "muuegm": SideProfile("MUUEGM", variant_owned=True),
     "dreamsense": SideProfile("Dream Sense Bed", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
@@ -395,6 +397,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SVANE: SideProfile("Svane Remote", variant_owned=True),
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "innova2"): SideProfile("Innova Control", variant_owned=True),
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "homezone"): SideProfile(
         "Home Zone Adjustable", variant_owned=True
     ),

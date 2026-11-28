@@ -4844,6 +4844,66 @@ suta_king_koil_confirm_alarm:
           max: 59
           mode: box
 
+innova_control:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+            - query
+            - rgb
+            - lamp_timeout
+            - aroma
+            - massage_timer
+            - massage_popup
+            - join_group
+            - leave_group
+    rgb_color:
+      selector:
+        color_rgb:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
+          mode: box
+          unit_of_measurement: s
+    aroma_times:
+      selector:
+        object:
+    progress:
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 1
+          mode: box
+    popup:
+      selector:
+        select:
+          options:
+            - "15"
+            - "30"
+            - "45"
+            - toggle
+    group:
+      selector:
+        text:
+
 ifit_save_preset:
   fields:
     device_id:

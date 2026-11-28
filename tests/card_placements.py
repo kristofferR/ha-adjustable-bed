@@ -231,6 +231,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.richmat.smart_base import SmartBaseController
     from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
     from custom_components.adjustable_bed.beds.richmat_classic.dreamlab import DreamlabController
+    from custom_components.adjustable_bed.beds.richmat_classic.innova_control import (
+        InnovaControlController,
+    )
     from custom_components.adjustable_bed.beds.richmat_classic.jerome import JeromeController
     from custom_components.adjustable_bed.beds.richmat_classic.lp2 import Lp2Controller
     from custom_components.adjustable_bed.beds.richmat_classic.maxprime import MaxprimeController
@@ -394,6 +397,15 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                 model=load_catalog("sleepfunction").models[layout]
                 yield variant(controller,layout=layout,_model=model,_controls=model.controls,
                               _receive=SleepFunctionReceive(light_capable=True))
+        elif isinstance(controller, InnovaControlController):
+            from custom_components.adjustable_bed.beds.richmat_classic.homezone import (
+                HomeZoneReceive,
+            )
+
+            for layout in ("D9RM", "Y6RM", "BTRM", "E3RM", "GVRM", "U3RM"):
+                model = load_catalog(controller.app).models[layout]
+                yield variant(controller, layout=layout, _model=model, _controls=model.controls,
+                              _receive=HomeZoneReceive(light_capable=True, aroma_capable=True))
         elif isinstance(controller, MaxprimeController):
             for layout in ("AORM", "DHRM", "D9RM", "DXRM", "E3RM", "GVRM", "U3RM", "Y6RM", "YFRM"):
                 model = load_catalog(controller.app).models[layout]
