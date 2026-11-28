@@ -461,7 +461,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {
-        "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+        "ergosportive", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
      BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO, BED_TYPE_AMBIENT, "silksnow", BED_TYPE_MOTIONFLEX}
 )
@@ -2775,7 +2775,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
-        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "kingkoil", "scott_living"):
+        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "ergosportive", "kingkoil", "scott_living"):
             return True
         if self._migration_family is None:
             return False
@@ -2790,6 +2790,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             select_roles(client)
             return
 
+        if data.get(CONF_BED_TYPE) == "ergosportive":
+            from .beds.keeson.ergosportive import select_link as select_ergosportive_link
+
+            select_ergosportive_link(client)
+            return
         if data.get(CONF_BED_TYPE) == "kingkoil":
             from .beds.keeson.kingkoil import select_link
 
@@ -2806,6 +2811,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Import what the staged route's family check reads, off the event loop."""
         if data.get(CONF_BED_TYPE) == "scott_living":
             await async_import_modules(self.hass, "beds.scott_living")
+        if data.get(CONF_BED_TYPE) == "ergosportive":
+            await async_import_modules(self.hass, "beds.keeson.ergosportive")
         if data.get(CONF_BED_TYPE) == "kingkoil":
             await async_import_modules(self.hass, "beds.keeson.kingkoil")
         if self._migration_family is not None:
@@ -7091,6 +7098,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         select_roles(client)
                         report.scott_living_transport_valid = True
                         return report
+                    if bed_type == "ergosportive":
+                        await async_import_modules(self.hass, "beds.keeson.ergosportive")
+                        from .beds.keeson.ergosportive import (
+                            select_link as select_ergosportive_link,
+                        )
+
+                        select_ergosportive_link(client)
+                        return report
                     if bed_type == "kingkoil":
                         await async_import_modules(self.hass, "beds.keeson.kingkoil")
                         from .beds.keeson.kingkoil import select_link
@@ -7267,7 +7282,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:
             if migration_check is not None or bed_type in (
-                BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO, "kingkoil",
+                BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO, "ergosportive", "kingkoil",
             ):
                 report.connected = False
             report.error = str(err) or err.__class__.__name__

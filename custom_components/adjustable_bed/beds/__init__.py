@@ -81,6 +81,7 @@ if TYPE_CHECKING:
     from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.enso import EnsoController as EnsoController
+    from .keeson.ergosportive import ErgoSportiveController as ErgoSportiveController
     from .keeson.jalon import JalonController as JalonController
     from .keeson.junasleep import JunaSleepController as JunaSleepController
     from .keeson.kingkoil import KingKoilController as KingKoilController
@@ -263,6 +264,7 @@ _EXPORT_MODULES = {
     "AlyaController": "alya.controller",
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
+    "ErgoSportiveController": ("keeson.ergosportive", "ErgoSportiveController"),
     "KingKoilController": ("keeson.kingkoil", "KingKoilController"),
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),

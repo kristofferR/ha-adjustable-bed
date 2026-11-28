@@ -4363,6 +4363,9 @@
   "card_section": "motors",
   "card_motor": "ergobq_motor_4"
  },
+ "number:ergosportive_brightness": {
+  "card_section": "lighting"
+ },
  "number:fan_level": {
   "card_section": "climate"
  },
@@ -5527,6 +5530,9 @@
   "card_section": "hidden"
  },
  "sensor:ergobq_light_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:ergosportive_twitch": {
   "card_section": "hidden"
  },
  "sensor:eshine_alarm": {
