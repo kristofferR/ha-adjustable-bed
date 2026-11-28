@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.const import (
     JIECANG_APP_PROFILES,
 )
 from custom_components.adjustable_bed.profiles import jiecang as jiecang_profiles
+from scripts.codec_docs import _dreamotion_smart
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/jiecang.md"
@@ -552,3 +553,5 @@ BLOCKS: list[Block] = [
     (GUIDE, "jiecang-queries", render_jiecang_queries),
     (GUIDE, "jiecang-wake", render_jiecang_wake),
 ]
+
+BLOCKS.append((GUIDE, 'dreamotion-smart', _dreamotion_smart.render))

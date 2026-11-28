@@ -113,10 +113,17 @@ def test_manifest_discovers_restonic_bt_name_only_advertisements() -> None:
         if isinstance(pattern := matcher.get("local_name"), str)
     }
     assert any(fnmatchcase("BASE-I4.00002574", pattern) for pattern in juna_patterns)
-    assert not any(
-        fnmatchcase("BASE-I4.00002574", pattern)
-        for pattern in patterns if pattern not in juna_patterns
-    )
+    # Intellibed also scans these names, but case-insensitively. Keep this
+    # assertion scoped to Restonic rather than prohibiting other app hints.
+    from custom_components.adjustable_bed.discovery_hints import HINTS_BY_FAMILY
+
+    restonic_patterns = [
+        matcher["local_name"]
+        for hint in HINTS_BY_FAMILY["restonic"]
+        for matcher in hint.matchers()
+        if "local_name" in matcher
+    ]
+    assert not any(fnmatchcase("BASE-I4.00002574", pattern) for pattern in restonic_patterns)
 
 
 def test_pairlink_company_key_reaches_host_matcher_without_claiming_protocol() -> None:

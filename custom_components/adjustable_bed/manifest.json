@@ -28,6 +28,9 @@
       "service_uuid": "00001527-9f03-0de5-96c5-b8f4f3081186"
     },
     {
+      "service_uuid": "0000180a-0000-1000-8000-00805f9b34fb"
+    },
+    {
       "service_uuid": "0000a00a-0000-1000-8000-00805f9b34fb",
       "connectable": true
     },
@@ -1761,6 +1764,9 @@
       "local_name": "HHRN*"
     },
     {
+      "local_name": "HHc*"
+    },
+    {
       "local_name": "HJ-*"
     },
     {
@@ -1846,6 +1852,12 @@
     },
     {
       "local_name": "Headboard265*"
+    },
+    {
+      "local_name": "HhC*"
+    },
+    {
+      "local_name": "Hhc*"
     },
     {
       "local_name": "I0RM*"
@@ -3991,6 +4003,15 @@
     },
     {
       "local_name": "elevate*"
+    },
+    {
+      "local_name": "hHC*"
+    },
+    {
+      "local_name": "hHc*"
+    },
+    {
+      "local_name": "hhC*"
     },
     {
       "local_name": "hhc*"

@@ -512,6 +512,17 @@ codec. All 90 frozen builder vectors reproduce byte for byte in
 Its session extension keeps FIFO pacing, property-selected GATT roles and the
 normal/version-one boundary separate from the legacy remote routes.
 
+## Dreamotion Smart
+
+Dreamotion Smart 1.1.8 (`com.sendinfo.dreammotionpro`) reproduces all 35 frozen
+builder literals through Jiecang's existing frame encoder. Its profile owns
+fixed four-axis bilateral payloads, 300 ms hold/release and record settings.
+The codec adds a bounded fixed-offset record parser and optional declared length
+for reproducing the app's empty-light observation. Native writes require complete
+settings, and never send that malformed empty record. The shared Jiecang
+controller extension owns concrete GATT/session admission and the RGB/massage
+state. Existing app routes are unchanged. See [the app profile](../beds/jiecang.md#dreamotion-smart).
+
 ## iFit
 
 iFit 1.1 (3) reuses `codec/okin_5a.py` only after all 35 reachable command

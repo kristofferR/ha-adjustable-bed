@@ -4,7 +4,7 @@ Data extracted outside this repository from the apps' catalogs in
 ``beds/richmat_classic/data``; not edited by hand.
 """
 
-from ...profiles import baseremote, dreamlab, homezone, maxprime
+from ...profiles import baseremote, dreamlab, homezone, innova_control, maxprime
 from ...profiles.bedsmart import ALIASES as BEDSMART_ALIASES
 from ...profiles.bedsmart import LAYOUTS as BEDSMART_LAYOUTS
 from ...profiles.bedsmart import NAVIGATION_LAYOUTS as BEDSMART_NAVIGATION
@@ -515,3 +515,12 @@ MODEL_CHOICES["dynasty"] = (
 )
 MANUAL_ALIASES["dynasty"] = {'B6RU': 'B6RM', 'ZR90': 'S9RM', '200I': 'A8RM', '400I': 'A0RM', '800I': 'A1RM', 'COOL': 'QRRM'}
 # fmt: on
+
+# Innova Control owns its complete package-local selection domain.
+
+MODEL_CHOICES[innova_control.APP] = innova_control.LAYOUTS
+MANUAL_ALIASES[innova_control.APP] = {k: v for k, v in innova_control.ALIASES.items() if len(k) == 4}
+LAYOUT_PICKER_CHOICES[innova_control.APP] = {
+    f"{menu}:{layout}": layout
+    for menu, layouts in innova_control.NAVIGATION.items() for layout in layouts
+}

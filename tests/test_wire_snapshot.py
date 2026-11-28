@@ -15,9 +15,11 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -38,7 +40,8 @@ def test_wire_bytes_match_committed_snapshot() -> None:
     # A separate process: the capture must not see this test session's state.
     result = subprocess.run(
         [sys.executable, str(SCRIPT), "--check"],
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=None if os.environ.get("WIRE_SNAPSHOT_VERBOSE") else subprocess.PIPE,
         text=True,
         cwd=REPO_ROOT,
         check=False,
@@ -47,7 +50,35 @@ def test_wire_bytes_match_committed_snapshot() -> None:
         "Bytes on the wire changed. Review the diff, and if the change is deliberate "
         "regenerate with `uv run --no-sync python scripts/wire_snapshot.py`:\n"
         + result.stdout[-6000:]
-        + result.stderr[-2000:]
+        + (result.stderr or "")[-2000:]
+    )
+
+
+@pytest.mark.parametrize("verbose", [False, True])
+@pytest.mark.parametrize("returncode", [0, 1])
+def test_wire_subprocess_diagnostic_routing(monkeypatch, verbose, returncode) -> None:
+    if verbose:
+        monkeypatch.setenv("WIRE_SNAPSHOT_VERBOSE", "1")
+    else:
+        monkeypatch.delenv("WIRE_SNAPSHOT_VERBOSE", raising=False)
+    stderr = None if verbose else "snapshot stderr"
+    run = Mock(return_value=subprocess.CompletedProcess([], returncode, "snapshot stdout", stderr))
+    monkeypatch.setattr(subprocess, "run", run)
+
+    if returncode:
+        with pytest.raises(AssertionError, match="snapshot stdout") as error:
+            test_wire_bytes_match_committed_snapshot()
+        assert ("snapshot stderr" in str(error.value)) is (not verbose)
+    else:
+        test_wire_bytes_match_committed_snapshot()
+
+    run.assert_called_once_with(
+        [sys.executable, str(SCRIPT), "--check"],
+        stdout=subprocess.PIPE,
+        stderr=None if verbose else subprocess.PIPE,
+        text=True,
+        cwd=REPO_ROOT,
+        check=False,
     )
 
 

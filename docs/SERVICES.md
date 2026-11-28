@@ -2810,6 +2810,17 @@ write keeps its slot uncertain until a fresh report permits another deletion. Se
 Sunday=6, empty for once), and `enabled`. Use the shared `sync_clock` action for
 Coaxing local-calendar synchronization. See [My Side](beds/richmat.md#my-side).
 
+### Innova Control settings
+
+`adjustable_bed.innova_control` accepts `device_id` and paired `side`, with
+`operation`: `query`, `rgb` (`rgb_color`), `lamp_timeout` (`seconds`, 0–300),
+`aroma` (`aroma_times`, startup 2/startup 3 minutes and pause 3 hours),
+`massage_timer` (`progress`, exact slider position 0–5), `massage_popup`
+(`popup`, widget ID `15`, `30`, `45` or `toggle`), `join_group` (`group`, four
+printable ASCII characters) or `leave_group`. Grouping disconnects each receiver
+after writing. Physical timer durations and group synchronization are unverified.
+Use Set alarm for the selected layout’s preset/massage alarm combinations.
+
 ### GhostBed alarms and clock
 
 GhostBed app beds support `set_alarm` slots 1–4 with weekdays and `wake_mode_1` (Basic) or `wake_mode_2` (Pro). Both bank reports must be available before editing. `sync_clock` writes HA local time. Confirmed native Delete alarm buttons compact the four records; see [GhostBed](beds/flexispot.md#ghostbed).
