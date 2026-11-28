@@ -1548,6 +1548,8 @@ def default_scenario(bed_type: str) -> Scenario:
                         layout_id="powersbedding")
     if bed_type == "meisemobell":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="15_22_15a", layout_id="meisemobell:15_22_15a", replies={"write:e180039b": "ed8003061e8211072d841300"})
+    if bed_type == "ai_bed":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="305", entry_data={"ble_device_name": "MpeV3B-5-M2"})
     if bed_type == "ergobq":
         from custom_components.adjustable_bed.codec import ergobq as codec
         status = codec.publish((codec.boolean(18, False), codec.raw(12, codec.Massage().encode()),
@@ -2751,6 +2753,7 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend(Scenario(id=f"ai_bed:{route}", bed_type="ai_bed", protocol_variant=route, layout_id=f"ai_bed:{route}") for route in ("limos", "hj001", "qrrm"))
     scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
                               layout_id=f"berun:v{v}") for v in (6, 7, 8, 9))
@@ -3128,7 +3131,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 await startup_task
         if controller._coordinator.bed_type == "richmat_classic_apps" and getattr(controller, "app", None) == "maxprime":
             await controller.async_after_connect(SimpleNamespace(is_current=lambda: True))
-        if controller._coordinator.bed_type in {"komfyd", "comfyds", "suta"}:
+        if controller._coordinator.bed_type in {"komfyd", "comfyds", "suta", "ai_bed"}:
             await controller.async_after_connect(None)
         if controller._coordinator.bed_type == "solace" and controller.profile.key in ("sophie", "flexirest"):
             session = SimpleNamespace(is_current=lambda: True)

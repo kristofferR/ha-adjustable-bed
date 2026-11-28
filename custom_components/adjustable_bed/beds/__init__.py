@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
+    from .ai_bed.controller import AiBedController as AiBedController
     from .alya.controller import AlyaController as AlyaController
     from .ambient.controller import AmbientController as AmbientController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
@@ -372,6 +373,7 @@ _EXPORT_MODULES = {
     "SleepysBox25LegacyController": "sleepys.box25",
     "SolaceController": "solace.controller",
     "StarElevateController": "starcode.star_elevate",
+    "AiBedController": "ai_bed.controller",
     "SutaController": "suta.controller",
     "TrueMotionController": "truemotion.controller",
     "SvaneController": "svane.controller",
