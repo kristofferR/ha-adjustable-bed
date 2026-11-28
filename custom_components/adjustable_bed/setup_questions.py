@@ -4047,6 +4047,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PRODUCT_TYPE, okimattmotion_app.LAYOUTS, okimattmotion_app.DEFAULT_LAYOUT,
         ),),
     ),
+    "ifit": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 3,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 220,
+        },
+    ),
     BED_TYPE_OKIN_MOTIONBED: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,  # Compatibility field, not a physical actuator claim.
