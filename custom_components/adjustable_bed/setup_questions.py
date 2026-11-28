@@ -4162,6 +4162,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(Question(CONF_MOTOR_COUNT, aminach_app.LAYOUT_CHOICES, aminach_app.PLATINUM.default_motor_count),),
     ),
+    "avek": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Compatibility field; firmness buttons declare the controls.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 90,
+        },
+    ),
     "ifit": SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 3,

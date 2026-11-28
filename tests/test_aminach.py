@@ -460,6 +460,20 @@ def test_app_hint_preserves_strong_services_and_exclusions(entrypoint, name, ser
         assert "aminach" not in (result.ambiguous_types or ())
 
 
+def test_app_hint_does_not_strengthen_an_unrelated_shared_receiver():
+    from custom_components.adjustable_bed import detection
+    from tests.test_detection import _make_service_info
+
+    result = detection.detect_new_bed(
+        _make_service_info(
+            name="AMB2-01", service_uuids=["00001234-0000-1000-8000-00805f9b34fb"]
+        )
+    )
+    assert result.bed_type == "jensen"
+    assert result.confidence == 0.5
+    assert "aminach" in result.ambiguous_types
+
+
 @pytest.fixture
 async def scheduled_bed(hass):
     from homeassistant.config_entries import ConfigEntryState

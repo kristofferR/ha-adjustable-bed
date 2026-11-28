@@ -166,6 +166,7 @@ bed has been tested on real hardware.
 | [Okin CST](docs/beds/okin-nframe.md#okin-cst) | [MFirm 900 - O app](docs/beds/okin-nframe.md#okin-cst), [Jordan's Sanctuary - O, Resident Adjustable Bed, Rize Aviada - O, POWER BOB ULTRA-O, Rize Contemporary III - O, Carefree, Rize Clarity II - O and Support 挺你 科技調整床 apps](docs/beds/okin-nframe.md#okin-cst), [Nectar Move](docs/beds/okin-nframe.md#okin-cst), [Rize Remedy II app](docs/beds/okin-nframe.md#rize-remedy-ii), [Independence app (Customatic Demo)](docs/beds/okin-nframe.md#independence-customatic-demo), [Okin CST controls without an app profile](docs/beds/okin-nframe.md#okin-cst) | Rize (Sanctuary, Aviada, Bob, Contempo, II Carefree, II Clarity), Resident, Mattress Firm 900-O, Power Bob, Nectar |
 | [OKIN Smart Sleep](docs/beds/smart-sleep.md) | OKIN Smart Sleep (P1 and P2 beds) | OKIN |
 | [AMINACH Platinum](docs/beds/aminach.md) | AMINACH Platinum app | AMINACH Platinum |
+| [AVEK Ergo System](docs/beds/avek.md) | Shoulder and Hip firmness, A–D, Save and Initial | AVEK (untested) |
 | [Active Sleep](docs/beds/active-sleep.md) | [Active Sleep](docs/beds/active-sleep.md#active-sleep-profile) | Paramount (existing authentication ID required, untested) |
 | [Paramount](docs/beds/paramount.md) | [Bed Operation (ベッド操作)](docs/beds/paramount.md#bed-operation) | Paramount |
 | [Instant Comfort](docs/beds/personal-comfort.md#instant-comfort) | Instant Comfort (ANM / RA air firmness, Malouf / Reverie base) | Instant Comfort |
