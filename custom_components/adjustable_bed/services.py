@@ -98,7 +98,9 @@ from .const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
-    TIMED_MOVE_MOTOR_OPTIONS,
+)
+from .const import (
+    TIMED_MOVE_MOTOR_OPTIONS as TIMED_MOVE_MOTOR_OPTIONS,
 )
 from .coordinator import AdjustableBedCoordinator
 from .download import register_download
@@ -1432,7 +1434,6 @@ async def _timed_move_plan(
         motor_specs = {
             spec.key: spec
             for spec in controller.motor_control_specs
-            if spec.key in TIMED_MOVE_MOTOR_OPTIONS
         }
         valid_motors = set(motor_specs)
 
@@ -3585,7 +3586,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Required(ATTR_MOTOR): vol.In(TIMED_MOVE_MOTOR_OPTIONS),
+                vol.Required(ATTR_MOTOR): vol.All(cv.string, vol.Length(min=1)),
                 vol.Required(ATTR_DIRECTION): vol.In(["up", "down"]),
                 vol.Required(ATTR_DURATION_MS): vol.All(
                     vol.Coerce(int),

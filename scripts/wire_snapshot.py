@@ -1891,6 +1891,8 @@ def default_scenario(bed_type: str) -> Scenario:
         variant = "relax"
     if bed_type == "silvermotion":
         data.update({const.CONF_PRODUCT_TYPE: "queen", const.CONF_HAS_MASSAGE: True})
+    if bed_type == "easyctrl":
+        data[const.CONF_PRODUCT_TYPE] = "100"
     if bed_type == "cheerssleep":
         data[const.CONF_PRODUCT_TYPE] = "45"
     if bed_type == "smart_sleep":
@@ -2735,6 +2737,8 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
     for route, model in (("relax", 14), ("relax", 31), ("relax", 500), ("relax", 725), ("cheers_zh", 32), ("cheers_en", 32), ("legacy", 500)):
         routes.append(Scenario(id=f"relax_motion:{route}:{model}", bed_type="relax_motion", protocol_variant=route,
             entry_data={"bed_type": "relax_motion", "product_type": str(model), "protocol_variant": route}, layout_id="relax_motion"))
+    from custom_components.adjustable_bed.profiles.easyctrl import MODELS as EASYCTRL_MODELS
+    routes.extend(Scenario(id=f"easyctrl:{model}", bed_type="easyctrl", entry_data={"product_type": str(model)}, layout_id="easyctrl") for model in EASYCTRL_MODELS)
     from custom_components.adjustable_bed.profiles.cheerssleep import MODELS as CHEERSSLEEP_MODELS
     routes.extend(Scenario(id=f"cheerssleep:{model}", bed_type="cheerssleep", entry_data={"product_type": str(model)}, layout_id="cheerssleep") for model in CHEERSSLEEP_MODELS)
     # One accepted P1 outcome per numeric model; P2 scan selects only model80.
@@ -3227,7 +3231,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_after_connect(session)
             return
-        if controller._coordinator.bed_type in {"smart_sleep", "cheerssleep", "enso2", "relax_motion"}:
+        if controller._coordinator.bed_type in {"easyctrl", "smart_sleep", "cheerssleep", "enso2", "relax_motion"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return

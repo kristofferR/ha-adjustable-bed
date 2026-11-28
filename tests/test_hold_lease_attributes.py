@@ -20,7 +20,14 @@ from custom_components.adjustable_bed.execution import (
     ExecutionCapabilities,
 )
 
-STREAM = SimpleNamespace(execution=ExecutionCapabilities(hold="stream"))
+
+def _spec(key: str = "back") -> MotorControlSpec:
+    return MotorControlSpec(key, key, AsyncMock(), AsyncMock(), AsyncMock())
+
+
+STREAM = SimpleNamespace(
+    execution=ExecutionCapabilities(hold="stream"), motor_control_specs=(_spec(),)
+)
 LATCHED = SimpleNamespace(execution=ExecutionCapabilities(hold="latched"))
 NO_HOLD = SimpleNamespace(execution=NO_EXECUTION_CAPABILITIES)
 
@@ -30,7 +37,7 @@ NO_HOLD = SimpleNamespace(execution=NO_EXECUTION_CAPABILITIES)
     [
         ([STREAM], "back", {"hold_lease_mode": "stream", "hold_lease_motor": "back"}),
         ([LATCHED, LATCHED], None, {"hold_lease_mode": "latched"}),
-        # A motor timed_move cannot name leaves only the held-control route.
+        # An undeclared motor leaves only the held-control route.
         ([STREAM], "massage", {"hold_lease_mode": "stream"}),
         ([NO_HOLD], "back", {}),
         ([STREAM, LATCHED], "back", {}),
@@ -43,12 +50,9 @@ def test_one_declared_mode_across_every_target_offers_a_lease(controllers, motor
     assert hold_lease_attributes(controllers, motor) == expected
 
 
-def _spec(key: str = "back") -> MotorControlSpec:
-    return MotorControlSpec(key, key, AsyncMock(), AsyncMock(), AsyncMock())
-
-
 def test_cover_advertises_its_controller_hold_and_timed_motor():
-    runtime = SimpleNamespace(controller_side=None,
+    runtime = SimpleNamespace(
+        controller_side=None,
         capability_controller=STREAM,
         entity_side=SIDE_LEFT,
         device_info={},
@@ -78,7 +82,8 @@ def test_combined_motor_offers_a_hold_only_when_both_sides_agree(mode, right, ex
     spec = _spec()
     coordinator = MagicMock(pair_id="pair", device_info={}, connection_mode=mode)
     coordinator.children = {
-        side: SimpleNamespace(controller_side=None,
+        side: SimpleNamespace(
+            controller_side=None,
             capability_controller=SimpleNamespace(
                     execution=controller.execution, motor_control_specs=[spec],
                     controller_button_specs=(),
@@ -89,3 +94,14 @@ def test_combined_motor_offers_a_hold_only_when_both_sides_agree(mode, right, ex
     }
     attributes = PairedBedCombinedMotorButton(coordinator, spec, "up").extra_state_attributes
     assert {key: attributes[key] for key in attributes if key.startswith("hold_lease")} == expected
+
+
+def test_declared_custom_motor_keys_are_leaseable_without_a_global_name_list():
+    custom = SimpleNamespace(
+        execution=ExecutionCapabilities(hold="stream"), motor_control_specs=(_spec("seat_1"),)
+    )
+    assert hold_lease_attributes(iter((custom,)), "seat_1") == {
+        "hold_lease_mode": "stream",
+        "hold_lease_motor": "seat_1",
+    }
+    assert hold_lease_attributes((STREAM, custom), "seat_1") == {"hold_lease_mode": "stream"}
