@@ -5547,6 +5547,9 @@
  "sensor:dreamsense_alarm_ack": {
   "card_section": "hidden"
  },
+ "sensor:dunlopillo_massage_timer": {
+  "card_section": "hidden"
+ },
  "sensor:dynasty_base_a_timer": {
   "card_section": "massage",
   "card_role": "timer"

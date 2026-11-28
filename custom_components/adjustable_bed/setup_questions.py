@@ -66,6 +66,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_DREAMOTION_SMART,
+    BED_TYPE_DUNLOPILLO,
     BED_TYPE_DYNASTY_BASE_A,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
@@ -356,6 +357,7 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_DUNLOPILLO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SYMPHONY: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "ergomotion_4": _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     "gmmotor": GENERIC_FIELDS,
@@ -2504,6 +2506,24 @@ def _kingkoil_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _dunlopillo_choices(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.dunlopillo import CHOICES
+
+    return CHOICES
+
+
+def _dunlopillo_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.dunlopillo import AXES, REFRESH_MS
+
+    layout = data.get(CONF_PROTOCOL_VARIANT, "b2")
+    if layout == "auto":
+        layout = "b2"
+    if layout not in AXES:
+        return {}
+    return {CONF_MOTOR_COUNT: len(AXES[layout]), CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: REFRESH_MS}
+
+
 def _dynasty_base_a_choices(_data: Mapping[str, Any]) -> Mapping[str, str]:
     from .profiles.dynasty_base_a import CHOICES
 
@@ -3624,6 +3644,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("kingkoil")),),
         derive=_kingkoil_settings,
     ),
+    BED_TYPE_DUNLOPILLO: _asking(BED_TYPE_DUNLOPILLO, questions=(Question(CONF_PROTOCOL_VARIANT, _dunlopillo_choices, "b2"),), derive=_dunlopillo_settings),
     BED_TYPE_DYNASTY_BASE_A: _asking(
         BED_TYPE_DYNASTY_BASE_A,
         questions=(Question(CONF_PROTOCOL_VARIANT, _dynasty_base_a_choices),),
