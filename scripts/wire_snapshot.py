@@ -1530,11 +1530,20 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "softide":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="3", layout_id="softide",
+                        entry_data={"protocol_variant": "3", "product_type": "primary", "ble_device_name": "KSWF16S182"})
     if bed_type == "ergosportive":
         from custom_components.adjustable_bed.profiles.ergosportive import CONTROLS
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="remote",
                         entry_data={"protocol_variant": "remote", "product_type": "old_dsp_normal", "ergosportive_controls": list(CONTROLS)},
                         layout_id="ergosportive")
+    if bed_type == "roewa":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="remote2Drive",
+            entry_data={"protocol_variant": "remote2Drive"}, layout_id="roewa",
+            replies={"62741625-52f9-8864-b1ab-3b3a8d65950b": "000b0000000000030000",
+                     "read:00002a26-0000-1000-8000-00805f9b34fb": "312e30",
+                     "read:00002a24-0000-1000-8000-00805f9b34fb": "526f657761"})
     if bed_type == "avek":
         return Scenario(id=bed_type, bed_type=bed_type,
             replies={"6e400003-b5a3-f393-e0a9-e50e24dcca9e": "b0020101b4"})
@@ -2250,6 +2259,17 @@ def route_scenarios() -> list[Scenario]:
                 continue  # The default captures the app's initial two-motor layout.
             scenarios.append(Scenario(id=f"konfurt:{layout}{suffix}", bed_type="konfurt",
                 protocol_variant=layout, layout_id="konfurt", properties=properties))
+    from custom_components.adjustable_bed.profiles.softide import MODELS as SOFTIDE_MODELS
+    from custom_components.adjustable_bed.profiles.softide import ROUTES as SOFTIDE_ROUTES
+
+    for model in SOFTIDE_MODELS:
+        for route in SOFTIDE_ROUTES:
+            for suffix, properties in (("", None), (":no_response", NO_RESPONSE_ONLY)):
+                if model == "3" and route == "primary" and not suffix:
+                    continue
+                scenarios.append(Scenario(id=f"softide:{model}:{route}{suffix}", bed_type="softide",
+                    protocol_variant=model, layout_id="softide", properties=properties,
+                    entry_data={"protocol_variant": model, "product_type": route, "ble_device_name": "KSWF16S182"}))
     scenarios.append(dataclasses.replace(default_scenario("ergosportive"), id="ergosportive:hardware221", protocol_variant="hardware221", entry_data={**default_scenario("ergosportive").entry_data, "protocol_variant": "hardware221"}, layout_id="ergosportive"))
     scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
     for route in ("p1", "p2"):
@@ -2821,6 +2841,9 @@ def build_scenarios() -> list[Scenario]:
         for layout in ("b1", "b2", "c1", "d1")
     )
     scenarios.extend(Scenario(id=f"ai_bed:{route}", bed_type="ai_bed", protocol_variant=route, layout_id=f"ai_bed:{route}") for route in ("limos", "hj001", "qrrm"))
+    scenarios.extend(dataclasses.replace(default_scenario("roewa"), id=f"roewa:{layout}",
+        protocol_variant=layout, entry_data={"protocol_variant": layout})
+        for layout in ("remote2Drive", "remote3Drive", "remote4Drive"))
     scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
                               layout_id=f"berun:v{v}") for v in (6, 7, 8, 9))
@@ -3088,7 +3111,7 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         coordinator.motor_count = scenario.entry_data.get("motor_count", 2)
     if scenario.bed_type == "junasleep":
         coordinator.ble_device_name = scenario.entry_data["ble_device_name"]
-    if scenario.bed_type == "konfurt" or (scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest"):
+    if scenario.bed_type in {"konfurt", "roewa"} or (scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest"):
         # New profile gates are driven by its scripted notifications, not by
         # invented initial state. Keep all pre-existing scenarios unchanged.
         from custom_components.adjustable_bed.controller_state import StateUpdate
@@ -3168,6 +3191,12 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type == "softide":
+            controller._coordinator.connection_generation += 1
+            session = SimpleNamespace(client=controller.client, is_current=lambda: True,
+                                      async_start_notify=controller.start_notify)
+            await controller.async_on_connect(session)
+            return
         if controller._coordinator.bed_type in {"powersbedding", "active_sleep"}:
             await controller.async_on_connect(SimpleNamespace(
                 async_start_notify=controller.start_notify,
@@ -3184,7 +3213,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"customatic_demo", "askona"}:
+        if controller._coordinator.bed_type in {"customatic_demo", "askona", "roewa"}:
             session = SimpleNamespace(
                 async_start_notify=controller.start_notify, store_device_info=lambda *_: None,
                 is_current=lambda: True,
@@ -3403,12 +3432,14 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
             try:
                 layout = layouts[scenario.layout_id or scenario.id]
                 if scenario.properties is not None:
-                    if scenario.bed_type == "konfurt":
-                        from custom_components.adjustable_bed.profiles.konfurt import WRITE
+                    if scenario.bed_type in ("konfurt", "softide"):
+                        from custom_components.adjustable_bed.profiles import konfurt, softide
 
-                        # This layout has explicit per-characteristic roles, which
+                        write_uuid = konfurt.WRITE if scenario.bed_type == "konfurt" else softide.WRITE
+
+                        # These layouts have explicit per-characteristic roles, which
                         # take precedence over a default. Keep the notify role.
-                        properties = {**layout.get("properties", {}), WRITE: [
+                        properties = {**layout.get("properties", {}), write_uuid: [
                             prop for prop in scenario.properties
                             if prop in ("write", "write-without-response")
                         ]}

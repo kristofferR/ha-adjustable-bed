@@ -203,6 +203,9 @@
  "binary_sensor:rize_home_active": {
   "card_section": "massage"
  },
+ "binary_sensor:roewa_memory_store": {
+  "card_section": "hidden"
+ },
  "binary_sensor:sinca_alarm_enabled": {
   "card_section": "hidden"
  },
@@ -2567,6 +2570,13 @@
  "button:rize_remedy_ii_wave_3": {
   "card_section": "massage"
  },
+ "button:roewa_memory_store": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:roewa_release": {
+  "card_section": "hidden"
+ },
  "button:ronco_motion_save_anti_snore": {
   "card_section": "presets",
   "card_role": "save"
@@ -3009,6 +3019,26 @@
  },
  "button:smartbed_alarm_refresh": {
   "card_section": "utility"
+ },
+ "button:softide_section_a_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "softide_section_a"
+ },
+ "button:softide_section_a_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "softide_section_a"
+ },
+ "button:softide_section_b_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "softide_section_b"
+ },
+ "button:softide_section_b_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "softide_section_b"
  },
  "button:solace_music_off": {
   "card_section": "utility"
@@ -4110,6 +4140,14 @@
  "cover:smartbed_right": {
   "card_section": "motors",
   "card_motor": "smartbed_right"
+ },
+ "cover:softide_section_a": {
+  "card_section": "motors",
+  "card_motor": "softide_section_a"
+ },
+ "cover:softide_section_b": {
+  "card_section": "motors",
+  "card_motor": "softide_section_b"
  },
  "cover:somos_axis_1": {
   "card_section": "motors",
@@ -6224,6 +6262,16 @@
  },
  "sensor:smartbed_alarm_time": {
   "card_section": "hidden"
+ },
+ "sensor:softide_movement": {
+  "card_section": "utility"
+ },
+ "sensor:softide_program": {
+  "card_section": "presets"
+ },
+ "sensor:softide_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "sensor:solace_audio_volume": {
   "card_section": "hidden"

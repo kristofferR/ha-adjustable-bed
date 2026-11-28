@@ -104,6 +104,9 @@
       "service_uuid": "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7"
     },
     {
+      "service_uuid": "90311623-25fa-3346-12ef-3cfb7a2556ac"
+    },
+    {
       "service_uuid": "92111420-72ab-4564-62ef-2a881286a6b0"
     },
     {
@@ -2298,6 +2301,10 @@
     },
     {
       "local_name": "KSWF07S*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSWF16S*",
       "connectable": true
     },
     {

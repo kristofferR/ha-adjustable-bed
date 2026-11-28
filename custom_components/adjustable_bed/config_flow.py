@@ -461,7 +461,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {
-        "aminach", "sven", "ergosportive", "avek", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+        "aminach", "sven", "ergosportive", "roewa", "avek", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
      BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO, BED_TYPE_AMBIENT, "silksnow", BED_TYPE_MOTIONFLEX}
 )
@@ -2447,6 +2447,7 @@ class CapabilityReport:
     ambient_transport_valid: bool | None = None
     vindo_transport_valid: bool | None = None
     sven_transport_valid: bool | None = None
+    roewa_profile_valid: bool | None = None
     konfurt_transport_valid: bool | None = None
     kingkoil_transport_valid: bool | None = None
     scott_living_transport_valid: bool | None = None
@@ -2948,8 +2949,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Commit the staged selection only against the unchanged snapshot."""
         if (user_input or {}).get("action") == "keep":
             return await self.async_step_migration_keep()
+        result = self.operation.result
+        report = result.payload if result is not None else None
         if self._pending_entry is None or (
             self._migration_requires_check and not self._migration_verified
+        ) or (
+            self._pending_entry.get(CONF_BED_TYPE) == "roewa"
+            and isinstance(report, CapabilityReport)
+            and report.roewa_profile_valid is False
         ):
             return self.async_abort(reason="migration_verification_required")
         if not self._migration_unchanged():
@@ -6672,7 +6679,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             entry_data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
         ) or entry_data.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS or (
-            entry_data.get(CONF_BED_TYPE) == BED_TYPE_AMBIENT and self._verification_possible()
+            entry_data.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, "roewa") and self._verification_possible()
         )
         if self._migration is not None and self._migration.is_unchanged_by(entry_data):
             return await self._async_abort_unchanged()
@@ -6774,6 +6781,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             outcome = OperationOutcome.NOT_ADVERTISING
         elif (
             not report.connected
+            or report.roewa_profile_valid is False
             or report.leva_receiver_valid is False
             or report.alya_transport_valid is False
             or report.starcode_transport_valid is False
@@ -7102,6 +7110,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             ):
                                 writable += 1
                     report.writable_count = writable
+                    if bed_type == "roewa":
+                        await async_import_modules(self.hass, "beds.roewa.transport")
+                        from .beds.roewa.transport import read_identity, select_link
+
+                        report.roewa_profile_valid = False
+                        link = select_link(client)
+                        _, report.model = await read_identity(
+                            link, is_current=lambda: client is not None and client.is_connected,
+                        )
+                        report.manufacturer = "RÖWA"
+                        report.roewa_profile_valid = True
+                        return report
                     if bed_type == "scott_living":
                         await async_import_modules(self.hass, "beds.scott_living")
                         from .beds.scott_living import select_roles
@@ -7310,7 +7330,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:
             if migration_check is not None or bed_type in (
-                BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO, "ergosportive", "kingkoil", "konfurt",
+                BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO, "ergosportive", "kingkoil", "konfurt", "roewa",
             ):
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
@@ -7361,7 +7381,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     else "check_not_connected"
                 )
             )
-            if report.dorsal_endpoint_error is not None and report.error:
+            if (report.dorsal_endpoint_error is not None or report.roewa_profile_valid is False) and report.error:
                 lines.append(report.error)
             return "\n".join(lines)
 
@@ -7401,6 +7421,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             lines.append(await line("check_transport_missing"))
         elif (
             report.starcode_transport_valid is True
+            or report.roewa_profile_valid is True
             or report.leva_receiver_valid is True
             or report.sven_transport_valid is True
             or report.atlas_lift_transport_valid is True
@@ -7491,7 +7512,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 and not self._migration_requires_check
                 and isinstance(probe, CapabilityReport)
             )
-            if not retained_vindo_link and (self._migration_verified or allow_unreachable_vindo):
+            if (report.roewa_profile_valid is not False and not retained_vindo_link
+                    and (self._migration_verified or allow_unreachable_vindo)):
                 return await self._async_create_selected_app_entry(
                     title=self._pending_title
                     or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
@@ -7546,7 +7568,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._verify_form_shown = False
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
-            if ((((report.sven_transport_valid is False or report.konfurt_transport_valid is False) or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False) and user_input.get("action") == "change_app":
+            if (((report.sven_transport_valid is False or report.roewa_profile_valid is False or report.konfurt_transport_valid is False or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False) and user_input.get("action") == "change_app":
                 self._verify_form_shown = False
                 self._operation = None
                 if self._discovery_info is None:
@@ -7557,6 +7579,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and self._verify_form_shown
             and ((report.atlas_lift_transport_valid is not False and report.topcare_transport_valid is not False) and report.comfort_bed_transport_valid is not False)
             and report.sven_transport_valid is not False
+            and report.roewa_profile_valid is not False
             and report.konfurt_transport_valid is not False
             and report.kingkoil_transport_valid is not False
             and report.scott_living_transport_valid is not False
@@ -7614,7 +7637,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_show_form(step_id="retry_roomi_receiver")
 
         schema: dict[vol.Marker, Any] = {}
-        if (((report.sven_transport_valid is False or report.konfurt_transport_valid is False) or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False:
+        if ((report.sven_transport_valid is False or report.roewa_profile_valid is False or report.konfurt_transport_valid is False or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False:
             schema[vol.Required("action", default="retry")] = SelectSelector(
                 SelectSelectorConfig(
                     options=["retry", "change_app"],

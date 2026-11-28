@@ -646,3 +646,28 @@ remapping, light gates, 50 ms refresh and 100 ms tap release. The shared fixed
 Richmat session controller is extended for ordered property-selected GATT targets
 and uncertain local massage accounting. No remote route or historical wire case
 changes. See [Sven & Son](../beds/richmat.md#sven--son).
+
+
+## Softide
+
+Softide 1.2.4's frozen AA literals reproduce through the Sleep Assistant
+fourteen-byte carrier. Its own sparse switch also admits combined keys; the
+carrier is shared before each app's independent key gate. Fixed auxiliary
+records stay a literal lookup in the codec rather than an inferred checksum
+family. The independent `profiles/softide.py` owns all model, route and timing
+data. `beds/sleep_assistant/softide.py` supplies captured-session, primary/care
+release, program and JSON-consumer behavior through the shared GATT writer,
+command lane, hold leases and native entity shapes. No sibling capability or
+schedule selects Softide. See [Softide](../beds/sleep-assistant.md#softide).
+
+
+## RÖWA
+
+RÖWA Fernbedienung 1.1.0 reproduces all 17 frozen write vectors through
+`codec/okin_nframe.py`: the 15 independent 32-bit action literals, reconnect
+parameter record and UTF-16-counted UTF-8 name. Its separate typed profiles in
+`profiles/roewa.py` own the three remote layouts and awaited-write-plus-delay
+cadence. The shared Okin controller extension binds reads, subscription,
+initialization and refresh to one connection. Release ends refresh without
+inventing a STOP; memory-store feedback never becomes motor-position state.
+See [RÖWA](../beds/okin-nframe.md#röwa-fernbedienung).

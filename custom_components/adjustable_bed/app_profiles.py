@@ -224,6 +224,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
     ),
     "sven": SideProfile("Sven & Son", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
+    "roewa": SideProfile("RÖWA Fernbedienung", variant_owned=True),
     "avek": SideProfile("AVEK Ergo System"),
     "active_sleep": SideProfile("Active Sleep"),
     BED_TYPE_LANGJUE: SideProfile("Comfort Smart Bed (Langjue)"),
@@ -310,6 +311,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_RESTONIC: SideProfile("Restonic", variant_owned=True),
     "konfurt": SideProfile("KONFURT", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     "ergosportive": SideProfile("ErgoSportive", frozenset({CONF_MOTOR_COUNT}), variant_owned=True),
+    "softide": SideProfile("Softide", frozenset({CONF_MOTOR_COUNT}), variant_owned=True),
     "kingkoil": SideProfile("King Koil Bed", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     BED_TYPE_DUNLOPILLO: SideProfile("Dunlopillo Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     BED_TYPE_JUNASLEEP: SideProfile("JunaSleep", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
