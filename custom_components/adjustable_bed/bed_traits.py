@@ -338,6 +338,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_ERGOMOTION: _PERCENT_FEEDBACK_SCOPED,
     BED_TYPE_ERGOMOTION_4: _NO_ANGLES,
     BED_TYPE_ESHINE: _NO_ANGLES,
+    "motionflex": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_ALYA: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_ESHINE_OKIN: _NO_ANGLES,
     BED_TYPE_FSM_RELAX: _NO_ANGLES,
