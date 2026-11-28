@@ -53,6 +53,7 @@ from .const import (
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_PURELY_SLEEP,
     BED_TYPE_QPLUS_APP,
     BED_TYPE_REMACRO,
     BED_TYPE_RESTONIC,
@@ -128,6 +129,7 @@ from .profiles.motionflex import CHOICES as MOTIONFLEX_CHOICES
 from .profiles.myside import CHOICES as MYSIDE_PRODUCTS
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
+from .profiles.purely_sleep import PRODUCT_CHOICES as PURELY_SLEEP_PRODUCTS
 from .profiles.relax_motion import ROUTES as RELAX_MOTION_ROUTES
 from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
 from .profiles.richmat import BEDTECH_VARIANTS
@@ -186,6 +188,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "berun": {key: f"Version {profile.version}" for key, profile in BERUN_PROFILES.items()},
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
     "mattresspoint": {"BOX2422": "BOX2422", "BOX2442": "BOX2442"},
+    BED_TYPE_PURELY_SLEEP: dict(PURELY_SLEEP_PRODUCTS),
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),
     BED_TYPE_LIKIMIO: LIKIMIO_CHOICES,
