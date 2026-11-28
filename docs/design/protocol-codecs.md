@@ -594,3 +594,15 @@ those encoders. Its three current profiles own the product menus and alarm modes
 its session controller rejects mixed recognized services rather than applying
 the app's independent handle-selection and encoding order to unknown hardware.
 See [Thrive Sleep](../beds/richmat.md#thrive-sleep).
+
+
+## Dynasty Base A
+
+Dynasty Base A 1.0 reproduces all 55 frozen transmit literals through the
+unchanged Keeson E6, P2, clock and alarm-table encoders. Its extra byte stays
+zero and proves no side addressing. `profiles/dynasty_base_a.py` owns four
+independently selected layouts, transport precedence, keys and timing.
+The shared Keeson controller extension owns connection-bound read-after-write,
+fragment dispatch and the distinct movement, preset and accessory gestures.
+Preset holds expose the original recall stream without claiming memory saving.
+See [the app profile](../beds/keeson.md#dynasty-base-a).

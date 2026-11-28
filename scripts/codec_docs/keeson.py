@@ -21,6 +21,7 @@ from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
 from scripts.codec_docs._askona import BLOCKS as _ASKONA_BLOCKS
 from scripts.codec_docs._betterliving2 import BLOCKS as _BETTERLIVING2_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._dynasty_base_a import BLOCKS as _DYNASTY_BASE_A_BLOCKS
 from scripts.codec_docs._enso import BLOCKS as _ENSO_BLOCKS
 from scripts.codec_docs._junasleep import BLOCKS as _JUNASLEEP_BLOCKS
 from scripts.codec_docs._kingkoil import BLOCKS as _KINGKOIL_BLOCKS
@@ -1232,3 +1233,5 @@ BLOCKS.extend(_JUNASLEEP_BLOCKS)
 
 
 BLOCKS.extend(_POWERSBEDDING_BLOCKS)
+
+BLOCKS.extend(_DYNASTY_BASE_A_BLOCKS)
