@@ -142,6 +142,17 @@ async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     assert controller.profile.release.steps == ((100, 0),)
 
 
+@pytest.mark.parametrize("product", ("JLRN", "VJRM"))
+async def test_purely_sleep_normal_axes_declare_only_the_verified_stream_hold(product):
+    # Purely Sleep 2.0.1 E49/E53/E55/E56: actual normal motorList ->
+    # sustainPress widgets -> Timer100000us -> FIFO release OP6e on UP/CANCEL.
+    # This proves no merged simultaneous commands, motor speed, or V1 menu.
+    controller = await _create_controller_for_bed_type("purely_sleep", product)
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for() == "stream"
+    assert controller.profile.motor_repeat_ms == 100
+
+
 async def test_thrivesleep_current_motor_refresh_and_release_are_serialized():
     # Thrive Sleep 1.1.2: held widget Timer.periodic100ms; UP/CANCEL invokes
     # STOP through the FIFO. No concurrent/composed command or sustain proof.

@@ -4817,6 +4817,15 @@
     },
     "sensor": {
       "ergosportive_twitch": {"name": "Movement count"},
+      "purely_sleep_protocol_version": {
+        "name": "Protocol version"
+      },
+      "purely_sleep_clock_available": {
+        "name": "Clock available"
+      },
+      "purely_sleep_light_available": {
+        "name": "Light available"
+      },
         "active_sleep_model": {
           "name": "Bed model"
         },
@@ -12391,6 +12400,15 @@
     "ergosportive_control": {"message": "Choose a control enabled for this ErgoSportive profile and a hold from 0.1 to 30 seconds."},
     "ergosportive_memory_gesture_unresolved": {"message": "Memory save and held recall are not available for this ErgoSportive profile."},
     "ergosportive_brightness": {"message": "Enable bedside lamp brightness and choose a whole level from 1 to 13."},
+    "purely_sleep_product_required": {
+      "message": "Choose NXPS200 (JLRN) or PS200 (VJRM) for Purely Sleep normal mode."
+    },
+    "purely_sleep_gatt": {
+      "message": "Purely Sleep needs one supported Bluetooth service with its exact writable characteristic and a notification channel."
+    },
+    "purely_sleep_version_one": {
+      "message": "This Purely Sleep bed reported protocol version 1. Version-one controls are not supported yet."
+    },
     "active_sleep_normal_mode_required": {
       "message": "The bed must report normal operating mode before it can be controlled."
     },
@@ -14349,6 +14367,7 @@
         "comfort_bed": "Comfort Bed (ComfortCareBed)",
         "thrivesleep": "Thrive Sleep app",
         "atlas_lift": "Atlas Lift (Cama Lift)",
+        "purely_sleep": "Purely Sleep (NXPS200 / PS200, normal mode)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",
         "revive": "Revive Control app",
