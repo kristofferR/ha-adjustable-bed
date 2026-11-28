@@ -549,6 +549,14 @@ vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
 motion/session runtime; Settings gates belong to the current connection.
 The profile does not admit the other catalog layouts or raw transport.
 
+Flexx Motion 2.0.1 (20100) reproduces all 18 frozen transmit literals through
+the unchanged Richmat function encoder. Its typed preset subsets carry no
+movement, startup, session or capability defaults from other apps. The codec's
+separate `NextHeaderBuffer` implements its bounded receive envelope without
+changing any existing receiver. Discovery predicates, session admission and
+movement delivery remain unresolved, so no runnable route is registered.
+See [the reference-only profile](../beds/richmat.md#flexx-motion).
+
 Amada Smart 1.0.0 (1) selects the unchanged Okin N-frame codec after all 78
 frozen transmit literals match `frame40`, `request`, `clock` and `alarm`.
 `profiles/amada.py` owns the explicit A/AB/B selector and its own schedules.
