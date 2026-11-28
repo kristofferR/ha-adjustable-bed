@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Final, cast
 
 from bleak import BleakClient
@@ -51,6 +51,7 @@ ANGLE: Final = {side: StateKey[str | None](f"flexispot_{side}_angle") for side i
 @dataclass(slots=True)
 class _Owner:
     publisher: object | None = None
+    subscription_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,16 +69,30 @@ class _AdmissionExpired(Exception):
 class FlexispotController(ProfileExecution[app.FlexispotProfile], BedController):
     """Explicit product selection; no inferred positions, authentication or pairing."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+    def __init__(
+        self, coordinator: AdjustableBedCoordinator, *, profile: app.FlexispotProfile | None = None
+    ) -> None:
         super().__init__(coordinator)
         model = str(coordinator.entry.data.get(CONF_PRODUCT_TYPE, ""))
-        if model not in app.PROFILES:
+        if profile is None and model not in app.PROFILES:
             raise command_error("flexispot_model_required")
-        self.profile = app.PROFILES[model]
+        self.profile = profile if profile is not None else app.PROFILES[model]
         self._owner = app_session(coordinator.hass, coordinator.address, "flexispot", _Owner)
         self._link: _Link | None = None
         self._notifying = False
         self._status: codec.Status | None = None
+
+    @property
+    def refresh_ms(self) -> int:
+        return app.REFRESH_MS
+
+    @property
+    def release_ms(self) -> int:
+        return app.RELEASE_MS
+
+    @property
+    def massage_step_ms(self) -> int:
+        return app.MASSAGE_STEP_MS
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -283,24 +298,34 @@ class FlexispotController(ProfileExecution[app.FlexispotProfile], BedController)
                 await self._wait(event, repeat_delay_ms / 1000)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
-        link = self._live()
-        if not self._notifying:
-            await link.client.start_notify(
-                link.notify, lambda sender, data: self._notification(link, data)
-            )
+        await self._start_subscription(self._live())
+
+    async def _start_subscription(self, link: _Link) -> None:
+        async with self._owner.subscription_lock:
             self._live(link)
-            self._notifying = True
+            if not self._notifying:
+                await link.client.start_notify(
+                    link.notify, lambda sender, data: self._notification(link, data)
+                )
+                self._live(link)
+                self._notifying = True
+
+    async def _stop_subscription(self, link: _Link) -> None:
+        async with self._owner.subscription_lock:
+            # A successor starts only after an already submitted unsubscribe
+            # settles. An obsolete cleanup never removes its subscription.
+            if (
+                self._owner.publisher is None
+                and self.client is link.client
+                and link.client.is_connected
+            ):
+                await link.client.stop_notify(link.notify)
 
     async def stop_notify(self) -> None:
         link, notifying = self._link, self._notifying
         self.on_disconnect()
-        if (
-            link is not None
-            and notifying
-            and self.client is link.client
-            and link.client.is_connected
-        ):
-            await link.client.stop_notify(link.notify)
+        if link is not None and notifying:
+            await self._stop_subscription(link)
 
     def on_disconnect(self) -> None:
         link, self._link = self._link, None
@@ -380,7 +405,7 @@ class FlexispotController(ProfileExecution[app.FlexispotProfile], BedController)
 
     async def _release(self, link: _Link, motor: int) -> None:
         async def release() -> None:
-            await asyncio.sleep(app.RELEASE_MS / 1000)
+            await asyncio.sleep(self.release_ms / 1000)
             if self._current(link):
                 await self._send(link, codec.frame(3, motor), asyncio.Event(), cleanup=True)
                 if (context := current_command_context()) is not None:
@@ -395,7 +420,7 @@ class FlexispotController(ProfileExecution[app.FlexispotProfile], BedController)
         link, motor = self._live(), motors[axis]
         event = self._coordinator.cancel_command
         duration = self.leased_hold_ms(
-            duration_ms or self._coordinator.motor_pulse_count * app.REFRESH_MS
+            duration_ms or self._coordinator.motor_pulse_count * self.refresh_ms
         )
         deadline = asyncio.get_running_loop().time() + duration / 1000
         started = False
@@ -420,7 +445,7 @@ class FlexispotController(ProfileExecution[app.FlexispotProfile], BedController)
                     max(
                         0,
                         min(
-                            submitted_at + app.REFRESH_MS / 1000,
+                            submitted_at + self.refresh_ms / 1000,
                             deadline,
                         )
                         - asyncio.get_running_loop().time(),
@@ -698,7 +723,7 @@ class FlexispotController(ProfileExecution[app.FlexispotProfile], BedController)
                 max(
                     0,
                     started_at
-                    + index * app.MASSAGE_STEP_MS / 1000
+                    + index * self.massage_step_ms / 1000
                     - asyncio.get_running_loop().time(),
                 ),
             )

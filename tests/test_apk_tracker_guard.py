@@ -16,9 +16,8 @@ sys.modules[_SPEC.name] = guard
 _SPEC.loader.exec_module(guard)
 
 QUEUE_ROW = (
-    "| 066 | ACCEPTED | `cluster-018` · `com.richmat.fortywinks`, `com.richmat.milemont` | "
-    "Formal cluster | "
-    f"MERGED · [PR #825]({guard.PR_URL}825) |"
+    "| 066 | MERGED | `cluster-018` · `com.richmat.fortywinks`, `com.richmat.milemont` | "
+    f"1.0.1 (2), 1.0.4 (5) | [PR #825]({guard.PR_URL}825) |"
 )
 
 
@@ -27,7 +26,9 @@ def clean_body(number: int, queue_row: str = QUEUE_ROW) -> str:
     parts = [guard.marker(number), "Links and purpose.", ""]
     for title, _budget in guard.TRACKERS[number].sections:
         parts += [f"## {title}", "", "Durable content in plain words.", ""]
-        if title == "Canonical ordered phase 4 queue":
+        if guard.TRACKERS[number].has_queue and title == "Status":
+            parts += [*guard.count_table([]), ""]
+        if title == "Queue":
             parts += [guard.QUEUE_START, guard.QUEUE_HEADER, "|---:|---|---|---|---|"]
             parts += [queue_row, guard.QUEUE_END, ""]
     return "\n".join(parts)
@@ -40,8 +41,7 @@ def test_clean_body_passes(number: int) -> None:
 
 def test_queue_can_grow_beyond_its_old_size_limits() -> None:
     rows = "\n".join(
-        f"| A{index} | QUEUED | `com.example.bed{index}` | Post-cutoff standalone FULL "
-        "| NOT STARTED |"
+        f"| A{index} | QUEUED | Example · `com.example.bed{index}` | 1.0 ({index}) | |"
         for index in range(650)
     )
     assert guard.lint(436, clean_body(436, rows)) == []
@@ -63,7 +63,16 @@ COMPACTED = "Reverie041 PR720 MERGED00:26:37Z;041+1completion.UserPR720-only clo
         (447, lambda b: b.replace("Durable content", COMPACTED, 1), "compacted"),
         (436, lambda b: b.replace("PR #825", "PR #825 at " + "ab" * 32), "hashes"),
         (436, lambda b: b.replace("PR #825", "PR #825 " + "note " * 40), "160 characters"),
-        (436, lambda b: b.replace("| ACCEPTED |", "| MERGED / IMPLEMENTED |"), "analysis must"),
+        (436, lambda b: b.replace("| MERGED |", "| MERGED / IMPLEMENTED |"), "status must"),
+        (436, lambda b: b.replace("1.0.1 (2), 1.0.4 (5)", "v1.0.1, 1.0.4"), "name (code)"),
+        (
+            436,
+            lambda b: b.replace("| MERGED |", "| BLOCKED |").replace(
+                QUEUE_ROW.split(" | ")[-1], "|"
+            ),
+            "says why",
+        ),
+        (436, lambda b: b.replace("| Status | Count |", "| Scope | Count |"), "count table"),
         (436, lambda b: b.replace(QUEUE_ROW, QUEUE_ROW + "\n" + QUEUE_ROW), "twice"),
         (
             436,
@@ -140,52 +149,48 @@ view = importlib.util.module_from_spec(_VIEW_SPEC)
 sys.modules[_VIEW_SPEC.name] = view
 _VIEW_SPEC.loader.exec_module(view)
 
-MEMBERS = (
-    '<ul class="apk-list"><li class="apk"><code>com.richmat.coastersleep</code>'
-    '<span class="member-status done">Accepted</span></li></ul>'
-)
-OLD_VIEW = (
-    '<p id="current-run">Run journal</p><details class="queue-item" data-rank="66" '
-    f'data-family="richmat"><summary>stale</summary><p>stale reason</p>{MEMBERS}</details>'
-)
 
-
-def test_queue_view_mirrors_436_and_keeps_members() -> None:
+def test_queue_view_is_built_from_436_alone() -> None:
     body = clean_body(436).replace(
-        "## Status\n\nDurable content in plain words.",
-        "## Status\n\n| Scope | Count |\n|---|---|\n| Implementation | 79 merged |",
+        QUEUE_ROW,
+        QUEUE_ROW + "\n| A01 | QUEUED | Aeroflex · `com.aeroflex.aeroflex` | 1.1.0 (14) | |",
     )
-    page = view.render(body, OLD_VIEW)
+    page = view.render(body)
     assert f'<a href="{guard.PR_URL}825" target="_blank">PR #825</a>' in page
-    assert MEMBERS in page and "1/1 accepted" in page and "79 merged" in page
+    # A cluster lists its packages with one version line each; its cluster ID stays in #436.
     assert (
-        '<code>cluster-018</code><span class="apps"><code>com.richmat.fortywinks</code>, '
-        "<code>com.richmat.milemont</code></span>"
+        "<code>com.richmat.fortywinks</code><code>com.richmat.milemont</code></td>"
+        '<td class="version"><span>1.0.1 (2)</span><span>1.0.4 (5)</span></td>'
     ) in page
-    assert "Run journal" not in page and "stale" not in page
+    assert "<code>cluster-018</code>" not in page
+    assert '<span class="name">Aeroflex</span><code>com.aeroflex.aeroflex</code>' in page
+    assert "<b>2</b>Total" in page and "<b>1</b>Merged" in page and "<b>1</b>Queued" in page
 
 
-def test_queue_view_regenerates_from_its_own_output() -> None:
-    first = view.render(clean_body(436), OLD_VIEW)
-    assert MEMBERS in view.render(clean_body(436), first)
+def test_guard_recomputes_436_counts_after_a_clean_edit(api: FakeApi) -> None:
+    clean = clean_body(436)
+    stale = clean.replace("| Total | 0 |", "| Total | 7 |")
+    api.body = stale
+    assert guard.guard(_event(436, stale, clean)) == 0
+    assert api.calls[-1] == (
+        "PATCH",
+        "repos/owner/repo/issues/436",
+        {"body": guard.with_counts(clean)},
+    )
+    assert "| Total | 1 |" in api.calls[-1][2]["body"]
 
 
 def test_status_page_bakes_active_and_held_units_and_keeps_its_run_note() -> None:
     body = clean_body(436).replace(
         QUEUE_ROW,
-        QUEUE_ROW + "\n| 061 | BLOCKED | `com.richmat.tx` | Standalone FULL | NOT STARTED · held |"
-        "\n| 113 | IN PROGRESS | `com.HHC.MotoMotion` | Standalone FULL | NOT STARTED · under audit |",
+        QUEUE_ROW + "\n| 061 | BLOCKED | `com.richmat.tx` | | Package unknown |"
+        "\n| 113 | IN PROGRESS | `com.HHC.MotoMotion` | 1.0 (1) | Implementing |",
     )
-    old = '<h2>Run</h2>\n<div class="panel"><p>Run window note.</p></div>'
+    old = '<section id="run" class="panel"><p>Run window note.</p></section>'
     page = view.render_status(body, old)
-    assert '<section id="run" class="panel"><p>Run window note.</p></section>' in page
+    assert old in page
     active = page.split('id="active">')[1].split("</tbody>")[0]
     held = page.split('id="held">')[1].split("</tbody>")[0]
-    assert "com.HHC.MotoMotion" in active and "cluster-018" not in active
+    assert "com.HHC.MotoMotion" in active and "fortywinks" not in active
     assert "com.richmat.tx" in held and "com.HHC.MotoMotion" not in held
     assert "Run window note." in view.render_status(body, page)
-
-
-def test_queue_view_refuses_units_it_cannot_expand() -> None:
-    with pytest.raises(SystemExit, match="066"):
-        view.render(clean_body(436), "<html></html>")
