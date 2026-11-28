@@ -46,6 +46,7 @@ def target(profile=BED_TYPE_CUSTOMATIC_REMEDY):
         validate_hold_control=MagicMock(),
         hold_control=AsyncMock(),
         requires_disconnected_transport=False,
+        requires_connection_reset=False,
         requires_linked_live_readiness=False,
         paired_abort_requires_registered_stop=False,
     )

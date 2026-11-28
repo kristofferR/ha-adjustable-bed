@@ -1,0 +1,580 @@
+[
+  {
+    "id": "V-lightsOff",
+    "protocol": "P1",
+    "action": "lightsOff",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "lightsOff",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x74,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 74 A5",
+    "evidence": [
+      "action-lightsOff",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-toggleLights",
+    "protocol": "P1",
+    "action": "toggleLights",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "toggleLights",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x70,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 70 A5",
+    "evidence": [
+      "action-toggleLights",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-massageFootSub",
+    "protocol": "P1",
+    "action": "massageFootSub",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "massageFootSub",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x63,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 63 A5",
+    "evidence": [
+      "action-massageFootSub",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-massageStop",
+    "protocol": "P1",
+    "action": "massageStop",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "massageStop",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x6F,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 6F A5",
+    "evidence": [
+      "action-massageStop",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-massageHeadSub",
+    "protocol": "P1",
+    "action": "massageHeadSub",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "massageHeadSub",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x61,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 61 A5",
+    "evidence": [
+      "action-massageHeadSub",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-massageFootAdd",
+    "protocol": "P1",
+    "action": "massageFootAdd",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "massageFootAdd",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x62,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 62 A5",
+    "evidence": [
+      "action-massageFootAdd",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-massageWave3",
+    "protocol": "P1",
+    "action": "massageWave3",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "massageWave3",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x54,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 54 A5",
+    "evidence": [
+      "action-massageWave3",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-massageWave2",
+    "protocol": "P1",
+    "action": "massageWave2",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "massageWave2",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x53,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 53 A5",
+    "evidence": [
+      "action-massageWave2",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-massageWave1",
+    "protocol": "P1",
+    "action": "massageWave1",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "massageWave1",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x52,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 52 A5",
+    "evidence": [
+      "action-massageWave1",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-massageHeadAdd",
+    "protocol": "P1",
+    "action": "massageHeadAdd",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "massageHeadAdd",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x60,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 60 A5",
+    "evidence": [
+      "action-massageHeadAdd",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-lightsOn",
+    "protocol": "P1",
+    "action": "lightsOn",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "lightsOn",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x73,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 73 A5",
+    "evidence": [
+      "action-lightsOn",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-memoryFlat",
+    "protocol": "P1",
+    "action": "memoryFlat",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "memoryFlat",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x10,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 10 A5",
+    "evidence": [
+      "action-memoryFlat",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-memoryStretch",
+    "protocol": "P1",
+    "action": "memoryStretch",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "memoryStretch",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x19,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 19 A5",
+    "evidence": [
+      "action-memoryStretch",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-memoryInverse",
+    "protocol": "P1",
+    "action": "memoryInverse",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "memoryInverse",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x14,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 14 A5",
+    "evidence": [
+      "action-memoryInverse",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-memoryRead",
+    "protocol": "P1",
+    "action": "memoryRead",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "memoryRead",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x18,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 18 A5",
+    "evidence": [
+      "action-memoryRead",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-memoryZero",
+    "protocol": "P1",
+    "action": "memoryZero",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "memoryZero",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x13,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 13 A5",
+    "evidence": [
+      "action-memoryZero",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-memoryLounge",
+    "protocol": "P1",
+    "action": "memoryLounge",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "memoryLounge",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x17,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 17 A5",
+    "evidence": [
+      "action-memoryLounge",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-memoryAntiSnore",
+    "protocol": "P1",
+    "action": "memoryAntiSnore",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "memoryAntiSnore",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x16,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 16 A5",
+    "evidence": [
+      "action-memoryAntiSnore",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-stopCommand",
+    "protocol": "P1",
+    "action": "stopCommand",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "stopCommand",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x0f,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 0F A5",
+    "evidence": [
+      "action-stopCommand",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-legDownMax",
+    "protocol": "P1",
+    "action": "legDownMax",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "legDownMax",
+      "token_string": "0x5A,0x01,0x03,0x10,0x40,0x05,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 40 05 A5",
+    "evidence": [
+      "action-legDownMax",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-legUpMax",
+    "protocol": "P1",
+    "action": "legUpMax",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "legUpMax",
+      "token_string": "0x5A,0x01,0x03,0x10,0x40,0x04,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 40 04 A5",
+    "evidence": [
+      "action-legUpMax",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-footDownMax",
+    "protocol": "P1",
+    "action": "footDownMax",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "footDownMax",
+      "token_string": "0x5A,0x01,0x03,0x10,0x40,0x03,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 40 03 A5",
+    "evidence": [
+      "action-footDownMax",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-footUpMax",
+    "protocol": "P1",
+    "action": "footUpMax",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "footUpMax",
+      "token_string": "0x5A,0x01,0x03,0x10,0x40,0x02,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 40 02 A5",
+    "evidence": [
+      "action-footUpMax",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-headDownMax",
+    "protocol": "P1",
+    "action": "headDownMax",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "headDownMax",
+      "token_string": "0x5A,0x01,0x03,0x10,0x40,0x01,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 40 01 A5",
+    "evidence": [
+      "action-headDownMax",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-headUpMax",
+    "protocol": "P1",
+    "action": "headUpMax",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "headUpMax",
+      "token_string": "0x5A,0x01,0x03,0x10,0x40,0x00,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 40 00 A5",
+    "evidence": [
+      "action-headUpMax",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-legDown",
+    "protocol": "P1",
+    "action": "legDown",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "legDown",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x05,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 05 A5",
+    "evidence": [
+      "action-legDown",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-legUp",
+    "protocol": "P1",
+    "action": "legUp",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "legUp",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x04,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 04 A5",
+    "evidence": [
+      "action-legUp",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-setMemoryZero",
+    "protocol": "P1",
+    "action": "setMemoryZero",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "setMemoryZero",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x23,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 23 A5",
+    "evidence": [
+      "action-setMemoryZero",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-setMemoryLounge",
+    "protocol": "P1",
+    "action": "setMemoryLounge",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "setMemoryLounge",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x27,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 27 A5",
+    "evidence": [
+      "action-setMemoryLounge",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-setMemoryRead",
+    "protocol": "P1",
+    "action": "setMemoryRead",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "setMemoryRead",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x28,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 28 A5",
+    "evidence": [
+      "action-setMemoryRead",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-setMemoryAntiSnore",
+    "protocol": "P1",
+    "action": "setMemoryAntiSnore",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "setMemoryAntiSnore",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x26,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 26 A5",
+    "evidence": [
+      "action-setMemoryAntiSnore",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-footDown",
+    "protocol": "P1",
+    "action": "footDown",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "footDown",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x03,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 03 A5",
+    "evidence": [
+      "action-footDown",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-headDown",
+    "protocol": "P1",
+    "action": "headDown",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "headDown",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x01,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 01 A5",
+    "evidence": [
+      "action-headDown",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-footUp",
+    "protocol": "P1",
+    "action": "footUp",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "footUp",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x02,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 02 A5",
+    "evidence": [
+      "action-footUp",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-headUp",
+    "protocol": "P1",
+    "action": "headUp",
+    "inputs": {
+      "asset": "assets/36_33_03a.json",
+      "key": "headUp",
+      "token_string": "0x5A,0x01,0x03,0x10,0x30,0x00,0xA5"
+    },
+    "expected_bytes": "5A 01 03 10 30 00 A5",
+    "evidence": [
+      "action-headUp",
+      "builder",
+      "write"
+    ]
+  },
+  {
+    "id": "V-init",
+    "protocol": "P1",
+    "action": "connect initialization",
+    "inputs": {
+      "smi_constants": [
+        180,
+        22,
+        0,
+        330
+      ]
+    },
+    "expected_bytes": "5A 0B 00 A5",
+    "evidence": [
+      "initialization",
+      "write"
+    ]
+  }
+]

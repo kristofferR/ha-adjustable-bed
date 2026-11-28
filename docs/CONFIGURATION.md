@@ -400,6 +400,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Flexispot app | `flexispot` | 5 | 200 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
 | GhostBed app | `ghostbed` | 5 | 200 ms |
+| iFit app (manual selection) | `ifit` | 10 | 220 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
 | JobsAI智能助眠床 / Jobs AI app | `jobs` | 10 | 200 ms |
 | King Koil (SUTA) app | `suta_king_koil` | 1 | 150 ms |
