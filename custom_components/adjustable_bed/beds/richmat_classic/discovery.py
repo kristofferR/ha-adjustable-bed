@@ -1,7 +1,7 @@
 """The five apps' finite scan-name admission, offered only as an app hint."""
 
 from ...codec.richmat import TRANSPORTS
-from ...profiles import dreamlab, homezone, maxprime
+from ...profiles import dreamlab, homezone, maxprime, tss_remote
 from ...profiles.lp2 import scan_matches as lp2_matches
 from ...profiles.richmat import CLASSIC_TRANSPORTS
 from ...profiles.richmat_resource_apps import APPS, scan_matches
@@ -20,7 +20,7 @@ def matching_apps(name: str | None, service_uuids: tuple[str, ...] = ()) -> tupl
     upper = name.upper()
     matches = tuple(
         app for app, layouts in MODEL_CHOICES.items()
-        if app != dreamlab.APP and (
+        if app not in (dreamlab.APP, tss_remote.APP) and (
             maxprime.scan_matches(name) if app == maxprime.APP
             else homezone.scan_matches(name) if app == homezone.APP
             else lp2_matches(name) if app == "lp2"
@@ -31,5 +31,9 @@ def matching_apps(name: str | None, service_uuids: tuple[str, ...] = ()) -> tupl
     if dreamlab.scan_matches(name) and any(
         TRANSPORTS[route].service_uuid in service_uuids for route in CLASSIC_TRANSPORTS
     ):
-        return (*matches, dreamlab.APP)
+        matches = (*matches, dreamlab.APP)
+    if tss_remote.scan_matches(name) and upper[:4] not in {"WFRM", "FWRM", "BSRM", "E2RM", "RMCS", "TEST", "6HRM"} and any(
+        TRANSPORTS[route].service_uuid in service_uuids for route in CLASSIC_TRANSPORTS
+    ):
+        return (*matches, tss_remote.APP)
     return matches

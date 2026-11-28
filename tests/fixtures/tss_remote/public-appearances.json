@@ -1,0 +1,25 @@
+{
+  "controls": [
+    ["APRM", 2, "Synchronized bed operation", "23", false],
+    ["AQRM", 1, "Synchronized bed operation", "23", false],
+    ["A9RM", 1, "Left head up", "24", true],
+    ["A9RM", 3, "Right head up", "3f", true],
+    ["A9RM", 4, "Left head down", "25", true],
+    ["A9RM", 6, "Right head down", "40", true],
+    ["FLRM", 4, "Bed height up", "43", true],
+    ["FLRM", 6, "Bed height down", "44", true]
+  ],
+  "timers": [
+    ["ZWRM", 15, "Massage timer 2 hours", "5f"],
+    ["ZWRM", 16, "Massage timer 3 hours", "63"],
+    ["ZWRM", 17, "Massage timer 5 hours", "61"],
+    ["OTRM", 20, "Massage timer 15 minutes", "5f"],
+    ["APRM", 26, "Massage timer 15 minutes", "5f"],
+    ["APRM", 27, "Massage timer 30 minutes", "63"]
+  ],
+  "long_lights": [
+    ["CZRM", 15, 3000], ["W3RM", 17, 3000], ["W9RM", 15, 3000],
+    ["WARM", 15, 3000], ["WDRM", 15, 3000], ["WERM", 15, 3000],
+    ["FGRM", 2, 3000], ["FMRM", 3, 5000], ["FNRM", 6, 5000]
+  ]
+}

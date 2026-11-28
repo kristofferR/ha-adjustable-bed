@@ -213,6 +213,8 @@ class BedTraits:
     owns_device_info_reads: bool = False
     # A single-address pair may need separate Left and Right operations.
     single_address_native_both: bool = True
+    # App execution selects one physical receiver, including a paired parent.
+    single_command_target: bool = False
     passive_position_reconciliation: bool = False
     # Overrides the connection profile's connect timeout, in seconds.
     connection_timeout: float | None = None
@@ -439,6 +441,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_AMBIENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_DREAMOTION_SMART: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, cancellation_only_stop=True),
     BED_TYPE_VINDO: replace(_NO_ANGLES, owns_device_info_reads=True),
+    "ar_connect": replace(_NO_ANGLES_SCOPED, persistent_connection=True, owns_device_info_reads=True, cancellation_only_stop=True, single_address_native_both=False, single_command_target=True),
     BED_TYPE_LINAK: BedTraits(
         position_feedback=True,
         angle_sensors=True,
@@ -549,12 +552,21 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return _NONE
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
     traits = _BED_TRAITS.get(resolved, _NONE)
+    if resolved == "ar_connect" and protocol_variant == "headboard":
+        return replace(traits, single_command_target=False)
     if resolved == BED_TYPE_LINAK and protocol_variant == "carpe_diem":
         return replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, cancellation_only_stop=True)
     if resolved == "richmat_classic_apps" and protocol_variant == "lp2":
         return replace(traits, owns_device_info_reads=True)
     if resolved == "richmat_classic_apps" and protocol_variant == "jerome2":
         return replace(traits, single_address_native_both=False)
+    if resolved == "richmat_classic_apps" and protocol_variant == "tss_remote":
+        from .profiles.tss_remote import CONNECTION_TIMEOUT_S
+
+        return replace(
+            traits, single_address_native_both=False, owns_device_info_reads=True,
+            connection_scoped_state=True, connection_timeout=CONNECTION_TIMEOUT_S,
+        )
     if resolved == "richmat_classic_apps" and protocol_variant == "dreamlab2":
         return replace(traits, single_address_native_both=False, owns_device_info_reads=True)
     if resolved == "solace" and protocol_variant in ("sophie", "flexirest"):

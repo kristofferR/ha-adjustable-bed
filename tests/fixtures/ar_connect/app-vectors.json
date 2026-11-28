@@ -1,0 +1,375 @@
+[
+  {
+    "id": "recall.television",
+    "input": {},
+    "expected_hex": "0e00",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x72ab88",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "recall_slow.television",
+    "input": {},
+    "expected_hex": "0e40",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x72ab88",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "recall.zeroGravity",
+    "input": {},
+    "expected_hex": "0f00",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x72ab88",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "recall_slow.zeroGravity",
+    "input": {},
+    "expected_hex": "0f40",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x72ab88",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "recall.reading",
+    "input": {},
+    "expected_hex": "0c00",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x72ab88",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "recall_slow.reading",
+    "input": {},
+    "expected_hex": "0c40",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x72ab88",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "recall.favorite",
+    "input": {},
+    "expected_hex": "4400",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x72ab88",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "recall_slow.favorite",
+    "input": {},
+    "expected_hex": "4440",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x72ab88",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "save.television",
+    "input": {
+      "ui_reachable": true
+    },
+    "expected_hex": "3800",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x736e00",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "adapter_only.save.zeroGravity",
+    "input": {
+      "ui_reachable": false
+    },
+    "expected_hex": "3900",
+    "provenance": "static shared adapter + native builder only; actual UI gate excludes save; not hardware traffic",
+    "source": [
+      "libapp.so:0x736e00",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "save.reading",
+    "input": {
+      "ui_reachable": true
+    },
+    "expected_hex": "3a00",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x736e00",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "save.favorite",
+    "input": {
+      "ui_reachable": true
+    },
+    "expected_hex": "4500",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x736e00",
+      "accepted native memory builder"
+    ]
+  },
+  {
+    "id": "startup_speed.back",
+    "input": {
+      "speed_up": 1,
+      "speed_down": 1,
+      "acceleration": 0
+    },
+    "expected_hex": "00df80a300a300000000000000",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x709774",
+      "x2/i.o accepted builder"
+    ]
+  },
+  {
+    "id": "startup_speed.legs",
+    "input": {
+      "speed_up": 1,
+      "speed_down": 1,
+      "acceleration": 0
+    },
+    "expected_hex": "00de80a300a300000000000000",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x709774",
+      "x2/i.o accepted builder"
+    ]
+  },
+  {
+    "id": "startup_speed.feet",
+    "input": {
+      "speed_up": 1,
+      "speed_down": 1,
+      "acceleration": 0
+    },
+    "expected_hex": "00dc80a300a300000000000000",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x709774",
+      "x2/i.o accepted builder"
+    ]
+  },
+  {
+    "id": "startup_speed.base",
+    "input": {
+      "speed_up": 1,
+      "speed_down": 1,
+      "acceleration": 0
+    },
+    "expected_hex": "00db80a300a300000000000000",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x709774",
+      "x2/i.o accepted builder"
+    ]
+  },
+  {
+    "id": "gesture.release",
+    "input": {},
+    "expected_hex": "fe00",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x45050c->0x42aee8->0x72c6e4",
+      "native stopBed"
+    ]
+  },
+  {
+    "id": "gesture.cancel",
+    "input": {},
+    "expected_hex": "fe00",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x450444->0x42aee8->0x72c6e4",
+      "native stopBed"
+    ]
+  },
+  {
+    "id": "light.toggle",
+    "input": {},
+    "expected_hex": "9400",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x738d28",
+      "native toggleLight"
+    ]
+  },
+  {
+    "id": "headboard.live.True",
+    "input": {
+      "state": true
+    },
+    "expected_hex": "7b227374617465223a747275657d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x736244",
+      "FF01 controller PC routing"
+    ]
+  },
+  {
+    "id": "headboard.mood.True",
+    "input": {
+      "state": true
+    },
+    "expected_hex": "7b227374617465223a747275657d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x736244",
+      "FE01 controller PC routing"
+    ]
+  },
+  {
+    "id": "headboard.live.False",
+    "input": {
+      "state": false
+    },
+    "expected_hex": "7b227374617465223a66616c73657d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x736244",
+      "FF01 controller PC routing"
+    ]
+  },
+  {
+    "id": "headboard.mood.False",
+    "input": {
+      "state": false
+    },
+    "expected_hex": "7b227374617465223a66616c73657d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x736244",
+      "FE01 controller PC routing"
+    ]
+  },
+  {
+    "id": "headboard.live.red",
+    "input": {
+      "color": [
+        1,
+        0,
+        0
+      ],
+      "tint": 0.5,
+      "brightness": 1
+    },
+    "expected_hex": "7b22726564223a3235352c22677265656e223a302c22626c7565223a302c227768697465223a307d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x433ea0:0x434244",
+      "libapp.so:0x766abc",
+      "FF02"
+    ]
+  },
+  {
+    "id": "headboard.live.white",
+    "input": {
+      "color": [
+        1,
+        0,
+        0
+      ],
+      "tint": 1,
+      "brightness": 1
+    },
+    "expected_hex": "7b22726564223a302c22677265656e223a302c22626c7565223a302c227768697465223a3235357d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x433ea0:0x434244",
+      "libapp.so:0x766abc",
+      "FF02"
+    ]
+  },
+  {
+    "id": "headboard.live.mixed_half",
+    "input": {
+      "color": [
+        1,
+        1,
+        0
+      ],
+      "tint": 0.75,
+      "brightness": 0.5
+    },
+    "expected_hex": "7b22726564223a33322c22677265656e223a33322c22626c7565223a302c227768697465223a36347d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x433ea0:0x434244",
+      "libapp.so:0x766abc",
+      "FF02"
+    ]
+  },
+  {
+    "id": "headboard.clock.local",
+    "input": {
+      "local_datetime": "2026-11-28T12:34:56"
+    },
+    "expected_hex": "7b227365636f6e6473223a35362c226d696e75746573223a33342c22686f757273223a31322c2264617465223a32382c22646179223a362c226d6f6e7468223a31302c2279656172223a3132367d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x73590c:0x735cc8",
+      "FC01"
+    ]
+  },
+  {
+    "id": "headboard.mood.five_steps",
+    "input": {
+      "repeat": true,
+      "delay_minutes": 2,
+      "color_steps": 5
+    },
+    "expected_hex": "7b22726570656174223a747275652c2264656c6179223a322c22636f6c6f7273223a7b2231223a7b22726564223a3235352c22677265656e223a302c22626c7565223a302c227768697465223a307d2c2232223a7b22726564223a3235352c22677265656e223a302c22626c7565223a302c227768697465223a307d2c2233223a7b22726564223a3235352c22677265656e223a302c22626c7565223a302c227768697465223a307d2c2234223a7b22726564223a3235352c22677265656e223a302c22626c7565223a302c227768697465223a307d2c2235223a7b22726564223a3235352c22677265656e223a302c22626c7565223a302c227768697465223a307d7d7d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x739314",
+      "FE02"
+    ]
+  },
+  {
+    "id": "headboard.routine.wake",
+    "input": {
+      "hour": 7,
+      "minute": 30,
+      "duration_minutes": 10,
+      "audio_fields": "payload context, EXCLUDED feature"
+    },
+    "expected_hex": "7b22656e61626c6564223a747275652c226d6f6465223a2277616b65222c22686f7572223a372c226d696e757465223a33302c226475726174696f6e223a31302c22747261636b223a6e756c6c2c22766f6c756d65223a302c22726563757272656e6365223a7b226d6f6e646179223a747275652c2274756573646179223a66616c73652c227765646e6573646179223a66616c73652c227468757273646179223a66616c73652c22667269646179223a66616c73652c227361747572646179223a66616c73652c2273756e646179223a66616c73657d7d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x4277d8",
+      "libapp.so:0x7350d4",
+      "FD01"
+    ]
+  },
+  {
+    "id": "headboard.routine.remove",
+    "input": {
+      "ui_id": "12"
+    },
+    "expected_hex": "7b226964223a31327d",
+    "provenance": "static app caller + accepted native builder; not hardware traffic",
+    "source": [
+      "libapp.so:0x6fd4ec",
+      "FD02"
+    ]
+  }
+]

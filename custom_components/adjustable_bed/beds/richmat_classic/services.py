@@ -23,6 +23,7 @@ from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild, SingleAddressSideCoordinator
 from ...profile_id import ProfileRoute
 from ...profiles.maxprime import APP as MAXPRIME
+from ...profiles.tss_remote import APP as TSS_REMOTE
 from ...services import (
     DEVICE_IDS,
     SIDE_FIELD,
@@ -43,6 +44,7 @@ from .requests import Operation, Request
 from .transport import Transport
 
 _MAXPRIME_PROFILE_ID = ProfileRoute(BED_TYPE_RICHMAT_CLASSIC_APPS, MAXPRIME).profile_id
+_TSS_PROFILE_ID = ProfileRoute(BED_TYPE_RICHMAT_CLASSIC_APPS, TSS_REMOTE).profile_id
 
 OPERATIONS = (
     "query", "alarm", "cancel_alarm", "rgb", "lamp_slider", "lamp_save", "aroma",
@@ -79,7 +81,7 @@ async def handle_richmat_classic(call: ServiceCall) -> None:
     if request.operation in ("rgb", "aroma"):
         selection = _Selection.capture(targets)
         if sum(map(len, selection.children)) > 1 and any(
-            _is_maxprime(child) for group in selection.children for child in group
+            _requires_live_settings(child) for group in selection.children for child in group
         ):
             await _write_live_settings(call, selection, request)
             return
@@ -99,9 +101,9 @@ async def handle_richmat_classic(call: ServiceCall) -> None:
     )
 
 
-def _is_maxprime(target: BedChild) -> bool:
+def _requires_live_settings(target: BedChild) -> bool:
     coordinator = target.inner if isinstance(target, SingleAddressSideCoordinator) else target
-    return coordinator.profile_id == _MAXPRIME_PROFILE_ID
+    return coordinator.profile_id in (_MAXPRIME_PROFILE_ID, _TSS_PROFILE_ID)
 
 
 class _SettingsStopped(Exception):
@@ -111,7 +113,7 @@ class _SettingsStopped(Exception):
 async def _write_live_settings(
     call: ServiceCall, selection: _Selection, request: Request
 ) -> None:
-    """Keep all selected settings transports live across a Maxprime batch."""
+    """Check and retain every selected transport before a live settings batch."""
     targets = list(selection.targets)
     checks = [
         (parent, _child_side(parent, side, child), child)
@@ -128,20 +130,19 @@ async def _write_live_settings(
         _capture_command_admission(parent, side, ("configuration",)) for parent, side, _ in checks
     ]
 
-    await async_import_modules(call.hass, "beds.richmat_classic.maxprime")
+    await async_import_modules(
+        call.hass, "beds.richmat_classic.maxprime", "beds.richmat_classic.tss_remote"
+    )
     from .controller import BEFORE_SETTINGS_WRITE, RichmatClassicController
-    from .maxprime import MaxprimeController
+    from .tss_remote import TssRemoteController
 
     sessions: dict[int, tuple[RichmatClassicController, Transport]] = {}
 
     async def check(controller: RichmatClassicController, *, target: BedChild) -> None:
-        if isinstance(controller, MaxprimeController):
-            link = controller.settings_session(request)
+        if isinstance(controller, TssRemoteController):
+            link = await controller.async_prepare_settings(request)
         else:
-            controller.validate_richmat_classic_request(request)
-            link = controller.settings_transport
-            if link is None:
-                raise _bed_changed()
+            link = controller.settings_session(request)
         sessions[id(target)] = (controller, link)
 
     def verify() -> bool:
@@ -152,7 +153,7 @@ async def _write_live_settings(
             controller, link = sessions[id(child)]
             if child.controller is not controller or controller.settings_transport is not link:
                 raise _bed_changed()
-            if isinstance(controller, MaxprimeController) and controller.settings_session(request) is not link:
+            if controller.settings_session(request) is not link:
                 raise _bed_changed()
         return True
 
