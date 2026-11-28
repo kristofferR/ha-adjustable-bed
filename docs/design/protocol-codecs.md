@@ -558,6 +558,17 @@ vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
 motion/session runtime; Settings gates belong to the current connection.
 The profile does not admit the other catalog layouts or raw transport.
 
+
+## KONFURT
+
+KONFURT 1.0's 29 frozen normal, clock, alarm and query literals all reproduce
+byte for byte through `codec/keeson.py`. It is a typed profile in
+`profiles/konfurt.py`, with a shared Keeson controller extension for its captured
+GATT link, two delayed release writes, alarm sequencing and notification parser.
+Its manual layouts and command words are independent of other apps named Sino.
+No shared UUID or catalog name chooses this profile. Existing wire scenarios
+remain unchanged. See the [KONFURT profile](../beds/keeson.md#konfurt).
+
 Amada Smart 1.0.0 (1) selects the unchanged Okin N-frame codec after all 78
 frozen transmit literals match `frame40`, `request`, `clock` and `alarm`.
 `profiles/amada.py` owns the explicit A/AB/B selector and its own schedules.
@@ -592,3 +603,17 @@ those encoders. Its three current profiles own the product menus and alarm modes
 its session controller rejects mixed recognized services rather than applying
 the app's independent handle-selection and encoding order to unknown hardware.
 See [Thrive Sleep](../beds/richmat.md#thrive-sleep).
+
+## AVEK Ergo System
+
+AVEK Ergo System 2.0.2 requires `codec/avek.py`: no existing carrier
+reproduces its B0 length/fixed-prefix/little-endian word/additive-checksum
+controls together with its B1 six-byte identity reply and raw-count format.
+The Nordic UART UUIDs establish no codec equivalence. `profiles/avek.py`
+owns the single fixed Shoulder/Hip panel and its timing. All twelve outgoing
+literals and eight received observations are preserved in
+`tests/fixtures/avek/vectors.json` and checked by `tests/test_avek.py`.
+The controller binds callbacks and writes to their BLE session. Ending refresh
+is the only proven release. Initial's app waiter requests conditional
+cancellation; Home Assistant independently bounds its refresh instead of
+reproducing the app's unbounded-sender failure. See [AVEK](../beds/avek.md).

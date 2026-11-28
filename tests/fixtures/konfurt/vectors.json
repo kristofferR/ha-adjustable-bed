@@ -1,0 +1,471 @@
+[
+  {
+    "id": "B-back_up",
+    "protocol": "P1",
+    "action": "back_up",
+    "inputs": {
+      "function": 1,
+      "sub": 1
+    },
+    "expected_bytes": "e6 fe 16 01 00 00 00 00 04",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-back_down",
+    "protocol": "P1",
+    "action": "back_down",
+    "inputs": {
+      "function": 1,
+      "sub": 2
+    },
+    "expected_bytes": "e6 fe 16 02 00 00 00 00 03",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-foot_up",
+    "protocol": "P1",
+    "action": "foot_up",
+    "inputs": {
+      "function": 2,
+      "sub": 1
+    },
+    "expected_bytes": "e6 fe 16 04 00 00 00 00 01",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-foot_down",
+    "protocol": "P1",
+    "action": "foot_down",
+    "inputs": {
+      "function": 2,
+      "sub": 2
+    },
+    "expected_bytes": "e6 fe 16 08 00 00 00 00 fd",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-head_tilt_up",
+    "protocol": "P1",
+    "action": "head_tilt_up",
+    "inputs": {
+      "function": 4,
+      "sub": 1
+    },
+    "expected_bytes": "e6 fe 16 10 00 00 00 00 f5",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-head_tilt_down",
+    "protocol": "P1",
+    "action": "head_tilt_down",
+    "inputs": {
+      "function": 4,
+      "sub": 2
+    },
+    "expected_bytes": "e6 fe 16 20 00 00 00 00 e5",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-lumbar_up_ui_allup",
+    "protocol": "P1",
+    "action": "lumbar_up_ui_allup",
+    "inputs": {
+      "function": 5,
+      "sub": 1
+    },
+    "expected_bytes": "e6 fe 16 40 00 00 00 00 c5",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-lumbar_down_ui_alldown",
+    "protocol": "P1",
+    "action": "lumbar_down_ui_alldown",
+    "inputs": {
+      "function": 5,
+      "sub": 2
+    },
+    "expected_bytes": "e6 fe 16 80 00 00 00 00 85",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-stop",
+    "protocol": "P1",
+    "action": "stop",
+    "inputs": {
+      "function": 6,
+      "sub": 0
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 00 00 05",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-flat",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "function": 7,
+      "sub": 6
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 08 00 fd",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-anti",
+    "protocol": "P1",
+    "action": "anti",
+    "inputs": {
+      "function": 8,
+      "sub": 6
+    },
+    "expected_bytes": "e6 fe 16 00 80 00 00 00 85",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-reading",
+    "protocol": "P1",
+    "action": "reading",
+    "inputs": {
+      "function": 9,
+      "sub": 6
+    },
+    "expected_bytes": "e6 fe 16 00 20 00 00 00 e5",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-memory1_recall",
+    "protocol": "P1",
+    "action": "memory1_recall",
+    "inputs": {
+      "function": 10,
+      "sub": 6
+    },
+    "expected_bytes": "e6 fe 16 00 00 01 00 00 04",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-zero_gravity",
+    "protocol": "P1",
+    "action": "zero_gravity",
+    "inputs": {
+      "function": 11,
+      "sub": 6
+    },
+    "expected_bytes": "e6 fe 16 00 10 00 00 00 f5",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-tv",
+    "protocol": "P1",
+    "action": "tv",
+    "inputs": {
+      "function": 12,
+      "sub": 6
+    },
+    "expected_bytes": "e6 fe 16 00 40 00 00 00 c5",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-light_switch",
+    "protocol": "P1",
+    "action": "light_switch",
+    "inputs": {
+      "function": 14,
+      "sub": 3
+    },
+    "expected_bytes": "e6 fe 16 00 00 02 00 00 03",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-massage_on",
+    "protocol": "P1",
+    "action": "massage_on",
+    "inputs": {
+      "function": 18,
+      "sub": 3
+    },
+    "expected_bytes": "e6 fe 16 00 01 00 00 00 04",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-massage_off_same_payload",
+    "protocol": "P1",
+    "action": "massage_off_same_payload",
+    "inputs": {
+      "function": 18,
+      "sub": 4
+    },
+    "expected_bytes": "e6 fe 16 00 01 00 00 00 04",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-head_intensity_cycle",
+    "protocol": "P1",
+    "action": "head_intensity_cycle",
+    "inputs": {
+      "function": 15,
+      "sub": 0
+    },
+    "expected_bytes": "e6 fe 16 00 08 00 00 00 fd",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-foot_intensity_cycle",
+    "protocol": "P1",
+    "action": "foot_intensity_cycle",
+    "inputs": {
+      "function": 16,
+      "sub": 0
+    },
+    "expected_bytes": "e6 fe 16 00 04 00 00 00 01",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-wave_cycle",
+    "protocol": "P1",
+    "action": "wave_cycle",
+    "inputs": {
+      "function": 17,
+      "sub": 0
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 10 00 f5",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-timer_cycle",
+    "protocol": "P1",
+    "action": "timer_cycle",
+    "inputs": {
+      "function": 19,
+      "sub": 0
+    },
+    "expected_bytes": "e6 fe 16 00 02 00 00 00 03",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-alarm_query",
+    "protocol": "P1",
+    "action": "alarm_query",
+    "inputs": {
+      "function": 13,
+      "sub": 5
+    },
+    "expected_bytes": "e1 80 03 9b",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-alarm_off",
+    "protocol": "P1",
+    "action": "alarm_off",
+    "inputs": {
+      "function": 13,
+      "sub": 4
+    },
+    "expected_bytes": "ed 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8f",
+    "evidence": [
+      "E-PACKET",
+      "E-CALLERS"
+    ],
+    "provenance": "Static builder output from literal constants and traced callers; not captured traffic"
+  },
+  {
+    "id": "B-alarm_massage",
+    "protocol": "P1",
+    "action": "alarm_massage",
+    "inputs": {
+      "function": 13,
+      "sub": 3,
+      "payload": [
+        7,
+        30,
+        2,
+        9
+      ]
+    },
+    "expected_bytes": "ed 80 03 07 1e 02 09 00 00 00 00 00 00 00 00 5f",
+    "evidence": [
+      "E-PACKET",
+      "E-ALARM"
+    ],
+    "provenance": "Source-derived synthetic dynamic input, not capture"
+  },
+  {
+    "id": "B-alarm_memory",
+    "protocol": "P1",
+    "action": "alarm_memory",
+    "inputs": {
+      "function": 13,
+      "sub": 3,
+      "payload": [
+        6,
+        45,
+        64,
+        17
+      ]
+    },
+    "expected_bytes": "ed 80 03 06 2d 40 11 00 00 00 00 00 00 00 00 0b",
+    "evidence": [
+      "E-PACKET",
+      "E-ALARM"
+    ],
+    "provenance": "Source-derived synthetic dynamic input, not capture"
+  },
+  {
+    "id": "B-alarm_plain",
+    "protocol": "P1",
+    "action": "alarm_plain",
+    "inputs": {
+      "function": 13,
+      "sub": 3,
+      "payload": [
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "ed 80 03 00 00 01 00 00 00 00 00 00 00 00 00 8e",
+    "evidence": [
+      "E-PACKET",
+      "E-ALARM"
+    ],
+    "provenance": "Source-derived synthetic dynamic input, not capture"
+  },
+  {
+    "id": "B-clock_2026",
+    "protocol": "P1",
+    "action": "clock_2026",
+    "inputs": {
+      "function": 13,
+      "sub": 13,
+      "payload": [
+        126,
+        10,
+        27,
+        16,
+        21,
+        22
+      ]
+    },
+    "expected_bytes": "e7 80 01 7e 0a 1b 10 15 16 b9",
+    "evidence": [
+      "E-PACKET",
+      "E-ALARM"
+    ],
+    "provenance": "Source-derived synthetic dynamic input, not capture"
+  },
+  {
+    "id": "B-clock_2025",
+    "protocol": "P1",
+    "action": "clock_2025",
+    "inputs": {
+      "function": 13,
+      "sub": 13,
+      "payload": [
+        125,
+        0,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "e7 80 01 7d 00 01 00 00 00 19",
+    "evidence": [
+      "E-PACKET",
+      "E-ALARM"
+    ],
+    "provenance": "Source-derived synthetic dynamic input, not capture"
+  }
+]

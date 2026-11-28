@@ -55,6 +55,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Jerome's | [Customatic](beds/okin-nframe.md#customatic-family), [Remacro](beds/remacro.md), [Richmat](beds/richmat.md) |
 | Jiecang | [Jiecang](beds/jiecang.md) |
 | Jordan's | [Jordan's](beds/okin-nframe.md#jordans-serenity) |
+| KONFURT app | [Keeson](beds/keeson.md#konfurt), select the app layout manually; hardware unverified |
 | King Koil | [Keeson](beds/keeson.md) |
 | Leggett & Platt | [Leggett & Platt](beds/leggett-platt.md) |
 | Leon's | [L2 Motion](beds/motomotion.md#l2-motion) |

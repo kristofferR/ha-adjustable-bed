@@ -26,6 +26,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "wire_snapshot.py"
+CAPTURE_PARTS = 4
 
 
 def _load_tool():
@@ -37,12 +38,34 @@ def _load_tool():
     return module
 
 
+@pytest.fixture(scope="module", params=("0", "1"))
+def wire_catalog(request):
+    hash_seed = request.param
+    listed = subprocess.run(
+        [sys.executable, str(SCRIPT), "--probe", "--list"],
+        env={**os.environ, "PYTHONHASHSEED": hash_seed},
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        check=False,
+    )
+    assert listed.returncode == 0, listed.stderr
+    ids = sorted(listed.stdout.splitlines())
+    committed = json.loads((REPO_ROOT / "tests" / "fixtures" / "wire_snapshot.json").read_text())
+    assert len(ids) == len(set(ids)), "Duplicate wire scenario ids"
+    assert set(ids) == set(committed["scenarios"]), "Wire catalog and committed scenarios differ"
+    return hash_seed, ids, committed
+
+
 @pytest.mark.xdist_group("wire_snapshot")
-@pytest.mark.parametrize("hash_seed", ("0", "1"))
-def test_wire_bytes_match_committed_snapshot(hash_seed: str) -> None:
-    # Both full captures share a worker so they do not compete for CPU.
+@pytest.mark.parametrize("part", range(CAPTURE_PARTS))
+def test_wire_bytes_match_committed_snapshot(wire_catalog, part: int) -> None:
+    # Bound each case's work while covering the entire catalog under each seed.
+    hash_seed, ids, committed = wire_catalog
+    selected = ids[part::CAPTURE_PARTS]
+    assert selected, "Empty wire capture part"
     result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--probe"],
+        [sys.executable, str(SCRIPT), "--probe", "--only", *selected],
         env={**os.environ, "PYTHONHASHSEED": hash_seed},
         stdout=subprocess.PIPE,
         stderr=None if os.environ.get("WIRE_SNAPSHOT_VERBOSE") else subprocess.PIPE,
@@ -55,11 +78,25 @@ def test_wire_bytes_match_committed_snapshot(hash_seed: str) -> None:
         + result.stdout[-6000:]
         + (result.stderr or "")[-2000:]
     )
-    committed = (REPO_ROOT / "tests" / "fixtures" / "wire_snapshot.json").read_text()
+    scenarios = {sid: committed["scenarios"][sid] for sid in selected}
+    used_chars = {
+        write[1]
+        for scenario in scenarios.values()
+        for command in scenario["commands"].values()
+        for write in command.get("writes", [])
+    }
+    expected = {
+        "schema": committed["schema"],
+        "chars": {key: value for key, value in committed["chars"].items() if key in used_chars},
+        "scenarios": scenarios,
+    }
+    expected_text = json.dumps(expected, sort_keys=True, indent=2)
+    fresh_text = json.dumps(json.loads(result.stdout), sort_keys=True, indent=2)
     diff = difflib.unified_diff(
-        committed.splitlines(), result.stdout.splitlines(), "committed", "fresh", n=0, lineterm=""
+        expected_text.splitlines(), fresh_text.splitlines(),
+        "committed", "fresh", n=0, lineterm="",
     )
-    assert result.stdout == committed, (
+    assert fresh_text == expected_text, (
         "Bytes on the wire changed. Review the diff, and if the change is deliberate "
         "regenerate with `uv run --no-sync python scripts/wire_snapshot.py`:\n"
         + "\n".join(line[:240] for _, line in zip(range(20), diff, strict=False))
@@ -75,21 +112,20 @@ def test_wire_subprocess_diagnostic_routing(monkeypatch, verbose, returncode, ha
     else:
         monkeypatch.delenv("WIRE_SNAPSHOT_VERBOSE", raising=False)
     stderr = None if verbose else "snapshot stderr"
-    stdout = "snapshot stdout" if returncode else (
-        REPO_ROOT / "tests" / "fixtures" / "wire_snapshot.json"
-    ).read_text()
+    committed = {"schema": 3, "chars": {}, "scenarios": {"one": {"commands": {}}}}
+    stdout = "snapshot stdout" if returncode else json.dumps(committed)
     run = Mock(return_value=subprocess.CompletedProcess([], returncode, stdout, stderr))
     monkeypatch.setattr(subprocess, "run", run)
 
     if returncode:
         with pytest.raises(AssertionError, match="snapshot stdout") as error:
-            test_wire_bytes_match_committed_snapshot(hash_seed)
+            test_wire_bytes_match_committed_snapshot((hash_seed, ["one"], committed), 0)
         assert ("snapshot stderr" in str(error.value)) is (not verbose)
     else:
-        test_wire_bytes_match_committed_snapshot(hash_seed)
+        test_wire_bytes_match_committed_snapshot((hash_seed, ["one"], committed), 0)
 
     run.assert_called_once_with(
-        [sys.executable, str(SCRIPT), "--probe"],
+        [sys.executable, str(SCRIPT), "--probe", "--only", "one"],
         env={**os.environ, "PYTHONHASHSEED": hash_seed},
         stdout=subprocess.PIPE,
         stderr=None if verbose else subprocess.PIPE,
