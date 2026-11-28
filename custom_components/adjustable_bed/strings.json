@@ -4302,6 +4302,24 @@
       },
       "kingkoil_feet_down": {
         "name": "Foot down"
+      },
+      "amada_reset": {
+        "name": "Reset saved positions"
+      },
+      "amada_foot_strength_up": {
+        "name": "Foot massage intensity up"
+      },
+      "amada_foot_strength_down": {
+        "name": "Foot massage intensity down"
+      },
+      "amada_timer_step": {
+        "name": "Cycle massage timer"
+      },
+      "amada_refresh": {
+        "name": "Refresh massage and light"
+      },
+      "amada_refresh_alarm": {
+        "name": "Refresh alarm"
       }
     },
     "cover": {
@@ -6207,6 +6225,39 @@
       },
       "jobs_wake_alarm": {
         "name": "Wake alarm type"
+      },
+      "amada_massage_time_bucket": {
+        "name": "Massage timer bucket"
+      },
+      "amada_massage_head": {
+        "name": "Head massage intensity"
+      },
+      "amada_massage_foot": {
+        "name": "Foot massage intensity"
+      },
+      "amada_massage_mode": {
+        "name": "Massage mode"
+      },
+      "amada_massage_on": {
+        "name": "Massage active"
+      },
+      "amada_light": {
+        "name": "Bed light reported"
+      },
+      "amada_alarm_time": {
+        "name": "Bed alarm time"
+      },
+      "amada_alarm_enabled": {
+        "name": "Bed alarm enabled"
+      },
+      "amada_alarm_repeat": {
+        "name": "Bed alarm day mask"
+      },
+      "amada_alarm_kind": {
+        "name": "Bed alarm wake type"
+      },
+      "amada_alarm_submitted": {
+        "name": "Last submitted bed alarm frame"
       }
     },
     "light": {

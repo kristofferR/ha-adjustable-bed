@@ -1013,7 +1013,7 @@ class TestDetectBedTypeByManufacturerData:
         assert "name:smartbed428" in result.signals
         assert "manufacturer_payload:ab0102" in result.signals
         # Explicit app hints leave the proven Malouf route and confidence intact.
-        assert result.ambiguous_types == ["eshine_okin", "resident", "simmons_blue", "berun", "mline"]
+        assert result.ambiguous_types == ["eshine_okin", "resident", "simmons_blue", "amada", "berun", "mline"]
 
     def test_cb24_ab_payload_still_detects_cb24(self):
         """Known CB24AB advertisements must keep the CB24 detection path."""
