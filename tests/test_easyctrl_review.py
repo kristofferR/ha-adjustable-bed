@@ -782,3 +782,77 @@ async def test_cancelled_controller_admission_without_command_context_does_not_c
         await ctrl.set_light_color_with_level((17, 34, 51), 68)
     assert ctrl.local.rgb == (255, 255, 255) and ctrl.local.packed == -128
     c.client.write_gatt_char.assert_not_awaited()
+
+
+async def test_cancelled_sleep_activation_reports_partial_delivery(hass, ha_beds):
+    target = await ha_beds()
+
+    async def cancel_after_countdown(_char, frame, **_kwargs):
+        if int.from_bytes(frame[2:4], 'little') == app.CONTROL_CODES['sleep_countdown']:
+            target.runtime.cancel_command.set()
+
+    target.client.write_gatt_char.reset_mock()
+    target.client.write_gatt_char.side_effect = cancel_after_countdown
+    switch = entity(target, 'easyctrl_sleep', 'switch')
+    with virtual_clock():
+        await asyncio.gather(hass.services.async_call('switch', 'turn_on', {
+            'entity_id': switch,
+        }, blocking=True), return_exceptions=True)
+    assert codes(target) == [(app.CONTROL_CODES['sleep_countdown'], 60)]
+    assert target.runtime.controller_state.get(bed.SLEEP) is None
+    assert hass.states.get(switch).state == 'unknown'
+
+
+@pytest.mark.parametrize('motor_stop', [False, True])
+async def test_sequential_pair_stop_reopens_released_latched_motion(hass, motor_stop):
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+    children = {}
+    for number, side in enumerate(('left', 'right'), 1):
+        entry = MockConfigEntry(domain=const.DOMAIN, data={
+            'address': f'AA:BB:CC:DD:EE:{number:02X}', 'name': side,
+            'bed_type': 'easyctrl', 'product_type': '100', 'motor_count': 2,
+            'disable_angle_sensing': True,
+        })
+        entry.add_to_hass(hass)
+        child = AdjustableBedCoordinator(hass, entry)
+        _, transport = make()
+        child._client = transport.client
+        child._client.is_connected = False
+        child._controller = bed.EasyCtrlController(child, replace(app.MODELS[100], query_delay_ms=0))
+
+        async def connect(*_args, child=child, **_kwargs):
+            child.client.is_connected = True
+            await child.controller.start_notify()
+            return True
+
+        async def disconnect(*_args, child=child, **_kwargs):
+            child.client.is_connected = False
+            child.controller.on_disconnect()
+            return True
+
+        child.async_connect = AsyncMock(side_effect=connect)
+        child.async_ensure_connected = AsyncMock(side_effect=connect)
+        child.async_disconnect = AsyncMock(side_effect=disconnect)
+        children[side] = child
+    entry = MockConfigEntry(domain=const.DOMAIN, data={'pair_id': 'easyctrl-pair'})
+    entry.add_to_hass(hass)
+    pair = PairedBedCoordinator(hass, entry, children, connection_mode='sequential')
+    right = children['right']
+    try:
+        with virtual_clock():
+            await pair.async_execute_controller_command(lambda ctrl: ctrl.preset_flat(), side='right')
+            assert not right.is_connected
+            assert int.from_bytes(right.client.write_gatt_char.call_args.args[1][2:4], 'little') == 3
+            right.client.write_gatt_char.reset_mock()
+            if motor_stop:
+                await pair.async_stop_motor(lambda ctrl: ctrl.stop_all(), 'motor:all', side='right')
+            else:
+                await pair.async_stop_command(side='right')
+        frames = [call.args[1] for call in right.client.write_gatt_char.call_args_list]
+        assert len(frames) == 3
+        assert all(int.from_bytes(frame[2:4], 'little') == 1 for frame in frames)
+        assert children['left'].async_connect.await_count == 0
+    finally:
+        await pair.async_shutdown()

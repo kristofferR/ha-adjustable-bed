@@ -107,6 +107,10 @@ class EasyCtrlController(ProfileExecution[app.EasyCtrlProfile], SynDataControlle
         return False
 
     @property
+    def reconnect_for_explicit_stop(self) -> bool:
+        return True
+
+    @property
     def commands_share_timer(self) -> bool:
         return True
 
@@ -617,13 +621,17 @@ class EasyCtrlController(ProfileExecution[app.EasyCtrlProfile], SynDataControlle
         link = self._live()
         with self._sent(SLEEP(enabled)):
             if enabled:
-                await self._control(
-                    app.CONTROL_CODES["sleep_countdown"], self.local.sleep_minutes * 60, link=link
-                )
-                await cancellable(
-                    asyncio.sleep(self.profile.alarm_delay_ms / 1000),
-                    self._coordinator.cancel_command,
-                )
+                try:
+                    await self._control(
+                        app.CONTROL_CODES["sleep_countdown"], self.local.sleep_minutes * 60, link=link
+                    )
+                    await cancellable(
+                        asyncio.sleep(self.profile.alarm_delay_ms / 1000),
+                        self._coordinator.cancel_command,
+                    )
+                except asyncio.CancelledError:
+                    note_frame_skipped()
+                    raise
                 await self._control(app.CONTROL_CODES["sleep_action"], 3, link=link)
             else:
                 await self._control(app.CONTROL_CODES["sleep_delete"], link=link)
