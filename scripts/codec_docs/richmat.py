@@ -2239,6 +2239,10 @@ def render_silksnow_settings() -> str:
 
 BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silksnow-commands", render_silksnow_commands), (GUIDE, "silksnow-settings", render_silksnow_settings)]
 
+from scripts.codec_docs._purely_sleep import BLOCKS as PURELY_SLEEP_BLOCKS  # noqa: E402
+
+BLOCKS.extend(PURELY_SLEEP_BLOCKS)
+
 BLOCKS += _motionflex.BLOCKS
 
 

@@ -1301,6 +1301,9 @@ class BedController(GattWriter):
         """Whether a named action remains valid for current discovered capabilities."""
         return True
 
+    def validate_button_press(self, key: str) -> None:
+        """Preflight an action's runtime constraints before either paired side runs."""
+
     @property
     def replaced_standard_button_keys(self) -> frozenset[str]:
         """Standard buttons supplied as controller specs, with their own metadata."""

@@ -50,6 +50,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_ALYA,
+    BED_TYPE_AMADA,
     BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
@@ -114,6 +115,7 @@ from .const import (
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_PURELY_SLEEP,
     BED_TYPE_RESIDENT,
     BED_TYPE_RESTFUL,
     BED_TYPE_RESTONIC,
@@ -315,6 +317,7 @@ from .profiles.muuegm import CHOICES as MUUEGM_CHOICES
 from .profiles.myside import CHOICES as MYSIDE_PRODUCTS
 from .profiles.myside import PROFILES as MYSIDE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
+from .profiles.purely_sleep import PRODUCT_CHOICES as PURELY_SLEEP_PRODUCTS
 from .profiles.restonic import AXES as RESTONIC_AXES
 from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
 from .profiles.restonic import LAYOUT_CHOICES as RESTONIC_LAYOUTS
@@ -3995,6 +3998,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
     ),
+    BED_TYPE_PURELY_SLEEP: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, PURELY_SLEEP_PRODUCTS, lambda _data: REQUIRED,
+                            searchable=True),),
+    ),
     BED_TYPE_TOPCARE: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
@@ -4085,6 +4094,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(Question(CONF_PRODUCT_TYPE, _simmons_blue_layouts, "balance"),),
         imports=("profiles.simmons_blue",),
+    ),
+    BED_TYPE_AMADA: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 3, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, {"a": "A", "ab": "AB (both app targets)", "b": "B"}),),
     ),
     BED_TYPE_N32_MOTION_BED: SetupProfile(
         owns={
