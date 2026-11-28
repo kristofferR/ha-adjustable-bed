@@ -62,6 +62,12 @@ from .position_estimate_entities import async_setup_estimate_buttons
 from .runtime_data import entry_runtime
 
 if TYPE_CHECKING:
+    # Annotation only: importing it at runtime logs a deprecation warning on
+    # Home Assistant 2026.12+, which renamed it to Undefined. Core removes the
+    # UndefinedType alias in 2027.12; switch to Undefined once the minimum
+    # supported Home Assistant version is 2026.12 or later.
+    from homeassistant.helpers.typing import UndefinedType
+
     from .beds.base import BedController
     from .beds.entity_specs import (
         ControllerButtonSpec,
