@@ -5263,6 +5263,9 @@
  "select:flexispot_right_sensitivity": {
   "card_section": "utility"
  },
+ "select:flexx_motion_color": {
+  "card_section": "lighting"
+ },
  "select:footwarming_timer": {
   "card_section": "climate"
  },

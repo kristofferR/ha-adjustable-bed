@@ -2928,3 +2928,12 @@ For a Tempur pair, the parent targets the primary (Left) receiver.
 Use `device_id` and `preset` to remove an app-local favorite. The bed's stored
 position is not erased. Tempur clears an enabled alarm that uses the removed
 favorite after saving the local change.
+
+### Flexx Motion repeating alarms
+
+Use shared `set_alarm` to create or replace a repeating alarm in slots 1–7,
+with a wake action from the selected model. Refresh the bed's alarm list before
+`flexx_motion_enable_alarm` (`alarm_number`, `enabled`) or
+`flexx_motion_delete_alarm` (`alarm_number`). Both actions take `device_id`,
+require a fresh current record and preserve its other fields. They target one
+physical bed without an explicit side. See [Flexx Motion](beds/richmat.md#flexx-motion).
