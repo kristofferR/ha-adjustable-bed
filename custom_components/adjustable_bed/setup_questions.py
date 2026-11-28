@@ -292,6 +292,7 @@ from .const import (
     VMATBASIC_PROFILES,
 )
 from .import_executor import async_import_modules
+from .profiles import aminach as aminach_app
 from .profiles import askona as askona_profiles
 from .profiles import enso2 as enso2_profiles
 from .profiles import ergosportive as ergosportive_app
@@ -4181,6 +4182,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(
             CONF_PRODUCT_TYPE, okimattmotion_app.LAYOUTS, okimattmotion_app.DEFAULT_LAYOUT,
         ),),
+    ),
+    "aminach": SetupProfile(
+        owns={
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+            CONF_MOTOR_PULSE_DELAY_MS: aminach_app.PLATINUM.refresh_ms,
+        },
+        questions=(Question(CONF_MOTOR_COUNT, aminach_app.LAYOUT_CHOICES, aminach_app.PLATINUM.default_motor_count),),
     ),
     "avek": SetupProfile(
         owns={

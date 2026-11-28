@@ -560,6 +560,9 @@
  "button:ambient_zero_g": {
   "card_section": "presets"
  },
+ "button:aminach_release": {
+  "card_section": "hidden"
+ },
  "button:apex_massage_both": {
   "card_section": "massage"
  },

@@ -1,0 +1,180 @@
+[
+  {
+    "id": "CV01",
+    "protocol": "P1",
+    "action": "Sleep button",
+    "inputs": {
+      "button_index": 1,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 ba 00 40",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV02",
+    "protocol": "P1",
+    "action": "Light button",
+    "inputs": {
+      "button_index": 2,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 d1 00 57",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV03",
+    "protocol": "P1",
+    "action": "Memo button",
+    "inputs": {
+      "button_index": 3,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 e9 00 6f",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV04",
+    "protocol": "P1",
+    "action": "BACK up",
+    "inputs": {
+      "button_index": 4,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 74 00 fa",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV05",
+    "protocol": "P1",
+    "action": "BACK down",
+    "inputs": {
+      "button_index": 5,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 5d 00 e3",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV06",
+    "protocol": "P1",
+    "action": "FOOT up",
+    "inputs": {
+      "button_index": 6,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 46 00 cc",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV07",
+    "protocol": "P1",
+    "action": "FOOT down",
+    "inputs": {
+      "button_index": 7,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 2f 00 b5",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV08",
+    "protocol": "P1",
+    "action": "HEAD up",
+    "inputs": {
+      "button_index": 8,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 a3 00 29",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV09",
+    "protocol": "P1",
+    "action": "HEAD down",
+    "inputs": {
+      "button_index": 9,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 8c 00 12",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "CV16",
+    "protocol": "P1",
+    "action": "Common button release",
+    "inputs": {
+      "button_index": 16,
+      "model_argument": 0
+    },
+    "expected_bytes": "b0 05 10 00 c1 ff 00 85",
+    "evidence": [
+      "E05",
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "MV1",
+    "protocol": "P1",
+    "action": "Respond to adapter-address request",
+    "inputs": {
+      "local_adapter_address": "01:23:45:67:89:AB",
+      "fixture": "synthetic parameters exercising artifact formula, not a captured or embedded identity"
+    },
+    "expected_bytes": "b1 07 00 01 23 45 67 89 ab bc",
+    "evidence": [
+      "E08",
+      "E14"
+    ]
+  },
+  {
+    "id": "MV2",
+    "protocol": "P1",
+    "action": "Respond to adapter-address request",
+    "inputs": {
+      "local_adapter_address": "FE:DC:BA:98:76:54",
+      "fixture": "synthetic parameters exercising artifact formula, not a captured or embedded identity"
+    },
+    "expected_bytes": "b1 07 00 fe dc ba 98 76 54 ae",
+    "evidence": [
+      "E08",
+      "E14"
+    ]
+  }
+]
