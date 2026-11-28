@@ -1796,6 +1796,10 @@
   },
   "entity": {
     "button": {
+      "softide_section_a_up": {"name": "A section up"},
+      "softide_section_a_down": {"name": "A section down"},
+      "softide_section_b_up": {"name": "B section up"},
+      "softide_section_b_down": {"name": "B section down"},
       "konfurt_massage": {"name": "Toggle massage"},
       "konfurt_massage_head": {"name": "Cycle head massage"},
       "konfurt_massage_foot": {"name": "Cycle feet massage"},
