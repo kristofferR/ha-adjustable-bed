@@ -526,6 +526,14 @@ differs from Casper's complete-length receiver, so it has a scoped dispatcher
 with only its two verified announcements. See the
 [Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.
 
+Amada Smart 1.0.0 (1) selects the unchanged Okin N-frame codec after all 78
+frozen transmit literals match `frame40`, `request`, `clock` and `alarm`.
+`profiles/amada.py` owns the explicit A/AB/B selector and its own schedules.
+The shared Okin controller extension owns AMADA's captured BLE session, selected
+record parsing, six-second save/reset and generic HA alarm routing. A/B are not
+physical Left/Right evidence. The accepted source remains bounded PARTIAL
+(B1 SDK warnings and B2 exception/cancellation ordering), hardware unverified.
+
 ### Active Sleep
 
 `codec/active_sleep.py` and its typed profile are separate from Bed Operation's

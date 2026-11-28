@@ -1,0 +1,1298 @@
+[
+  {
+    "id": "headUp-00",
+    "protocol": "amada-current",
+    "action": "headUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 01 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headUp-aa",
+    "protocol": "amada-current",
+    "action": "headUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 01 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headUp-bb",
+    "protocol": "amada-current",
+    "action": "headUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 01 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headDown-00",
+    "protocol": "amada-current",
+    "action": "headDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 02 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headDown-aa",
+    "protocol": "amada-current",
+    "action": "headDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 02 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headDown-bb",
+    "protocol": "amada-current",
+    "action": "headDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 02 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "footUp-00",
+    "protocol": "amada-current",
+    "action": "footUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 04 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "footUp-aa",
+    "protocol": "amada-current",
+    "action": "footUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 04 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "footUp-bb",
+    "protocol": "amada-current",
+    "action": "footUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 04 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "footDown-00",
+    "protocol": "amada-current",
+    "action": "footDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 08 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "footDown-aa",
+    "protocol": "amada-current",
+    "action": "footDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 08 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "footDown-bb",
+    "protocol": "amada-current",
+    "action": "footDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 08 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "hfUp-00",
+    "protocol": "amada-current",
+    "action": "hfUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 05 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "hfUp-aa",
+    "protocol": "amada-current",
+    "action": "hfUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 05 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "hfUp-bb",
+    "protocol": "amada-current",
+    "action": "hfUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 05 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "hfDown-00",
+    "protocol": "amada-current",
+    "action": "hfDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 0a 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "hfDown-aa",
+    "protocol": "amada-current",
+    "action": "hfDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 0a aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "hfDown-bb",
+    "protocol": "amada-current",
+    "action": "hfDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 0a bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headTiltUp-00",
+    "protocol": "amada-current",
+    "action": "headTiltUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 10 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headTiltUp-aa",
+    "protocol": "amada-current",
+    "action": "headTiltUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 10 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headTiltUp-bb",
+    "protocol": "amada-current",
+    "action": "headTiltUp",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 10 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headTiltDown-00",
+    "protocol": "amada-current",
+    "action": "headTiltDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 20 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headTiltDown-aa",
+    "protocol": "amada-current",
+    "action": "headTiltDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 20 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "headTiltDown-bb",
+    "protocol": "amada-current",
+    "action": "headTiltDown",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 20 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "tv-00",
+    "protocol": "amada-current",
+    "action": "tv",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 40 00 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "tv-aa",
+    "protocol": "amada-current",
+    "action": "tv",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 40 00 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "tv-bb",
+    "protocol": "amada-current",
+    "action": "tv",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 40 00 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "zg-00",
+    "protocol": "amada-current",
+    "action": "zg",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 10 00 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "zg-aa",
+    "protocol": "amada-current",
+    "action": "zg",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 10 00 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "zg-bb",
+    "protocol": "amada-current",
+    "action": "zg",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 10 00 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "lounge-00",
+    "protocol": "amada-current",
+    "action": "lounge",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 20 00 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "lounge-aa",
+    "protocol": "amada-current",
+    "action": "lounge",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 20 00 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "lounge-bb",
+    "protocol": "amada-current",
+    "action": "lounge",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 20 00 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "anti-00",
+    "protocol": "amada-current",
+    "action": "anti",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 80 00 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "anti-aa",
+    "protocol": "amada-current",
+    "action": "anti",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 80 00 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "anti-bb",
+    "protocol": "amada-current",
+    "action": "anti",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 80 00 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "flat-00",
+    "protocol": "amada-current",
+    "action": "flat",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 08 00 00 00 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "flat-aa",
+    "protocol": "amada-current",
+    "action": "flat",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 08 00 00 00 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "flat-bb",
+    "protocol": "amada-current",
+    "action": "flat",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 08 00 00 00 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "m1-00",
+    "protocol": "amada-current",
+    "action": "m1",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 01 00 00 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "m1-aa",
+    "protocol": "amada-current",
+    "action": "m1",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 01 00 00 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "m1-bb",
+    "protocol": "amada-current",
+    "action": "m1",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 01 00 00 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "resetMemoryPosition-00",
+    "protocol": "amada-current",
+    "action": "resetMemoryPosition",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 08 00 10 00 00",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "resetMemoryPosition-aa",
+    "protocol": "amada-current",
+    "action": "resetMemoryPosition",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 08 00 10 00 aa",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "resetMemoryPosition-bb",
+    "protocol": "amada-current",
+    "action": "resetMemoryPosition",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 08 00 10 00 bb",
+    "evidence": [
+      "E06",
+      "E10",
+      "E11"
+    ],
+    "origin": "Constructed test input over exact frozen app literal tuple, not a hardware capture"
+  },
+  {
+    "id": "massageAll-00",
+    "protocol": "amada-current",
+    "action": "massageAll",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 01 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "massageAll-aa",
+    "protocol": "amada-current",
+    "action": "massageAll",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 01 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "massageAll-bb",
+    "protocol": "amada-current",
+    "action": "massageAll",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 01 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "timerSwitch-00",
+    "protocol": "amada-current",
+    "action": "timerSwitch",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 02 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "timerSwitch-aa",
+    "protocol": "amada-current",
+    "action": "timerSwitch",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 02 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "timerSwitch-bb",
+    "protocol": "amada-current",
+    "action": "timerSwitch",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 02 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "waveAdd-00",
+    "protocol": "amada-current",
+    "action": "waveAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 10 00 00 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "waveAdd-aa",
+    "protocol": "amada-current",
+    "action": "waveAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 10 00 00 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "waveAdd-bb",
+    "protocol": "amada-current",
+    "action": "waveAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 10 00 00 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "footStrengthAdd-00",
+    "protocol": "amada-current",
+    "action": "footStrengthAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 04 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "footStrengthAdd-aa",
+    "protocol": "amada-current",
+    "action": "footStrengthAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 04 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "footStrengthAdd-bb",
+    "protocol": "amada-current",
+    "action": "footStrengthAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 04 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "footStrengthReduce-00",
+    "protocol": "amada-current",
+    "action": "footStrengthReduce",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 01 00 00 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "footStrengthReduce-aa",
+    "protocol": "amada-current",
+    "action": "footStrengthReduce",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 01 00 00 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "footStrengthReduce-bb",
+    "protocol": "amada-current",
+    "action": "footStrengthReduce",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 01 00 00 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "headStrengthAdd-00",
+    "protocol": "amada-current",
+    "action": "headStrengthAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 08 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "headStrengthAdd-aa",
+    "protocol": "amada-current",
+    "action": "headStrengthAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 08 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "headStrengthAdd-bb",
+    "protocol": "amada-current",
+    "action": "headStrengthAdd",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 08 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "headStrengthReduce-00",
+    "protocol": "amada-current",
+    "action": "headStrengthReduce",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 80 00 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "headStrengthReduce-aa",
+    "protocol": "amada-current",
+    "action": "headStrengthReduce",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 80 00 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "headStrengthReduce-bb",
+    "protocol": "amada-current",
+    "action": "headStrengthReduce",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 80 00 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "toggleLight-00",
+    "protocol": "amada-current",
+    "action": "toggleLight",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 02 00 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "toggleLight-aa",
+    "protocol": "amada-current",
+    "action": "toggleLight",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 02 00 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "toggleLight-bb",
+    "protocol": "amada-current",
+    "action": "toggleLight",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 02 00 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "stop-00",
+    "protocol": "amada-current",
+    "action": "stop",
+    "kind": "command",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "05 02 00 00 00 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "stop-aa",
+    "protocol": "amada-current",
+    "action": "stop",
+    "kind": "command",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "05 02 00 00 00 00 aa",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "stop-bb",
+    "protocol": "amada-current",
+    "action": "stop",
+    "kind": "command",
+    "inputs": {
+      "selector": 187
+    },
+    "expected_bytes": "05 02 00 00 00 00 bb",
+    "evidence": [
+      "E07",
+      "E11"
+    ]
+  },
+  {
+    "id": "massageCheck",
+    "protocol": "amada-current",
+    "action": "massageCheck",
+    "kind": "query",
+    "inputs": {
+      "literal": [
+        0,
+        176
+      ]
+    },
+    "expected_bytes": "00 b0",
+    "evidence": [
+      "E08",
+      "E11"
+    ]
+  },
+  {
+    "id": "alarmCheck",
+    "protocol": "amada-current",
+    "action": "alarmCheck",
+    "kind": "query",
+    "inputs": {
+      "literal": [
+        0,
+        192
+      ]
+    },
+    "expected_bytes": "00 c0",
+    "evidence": [
+      "E08",
+      "E11"
+    ]
+  },
+  {
+    "id": "alarm-enable",
+    "protocol": "amada-current",
+    "action": "set mechanical alarm",
+    "kind": "alarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "repeat": 190,
+      "kind": 1,
+      "enabled": true,
+      "selector": 170
+    },
+    "expected_bytes": "07 05 be 01 07 1e 00 01 aa",
+    "evidence": [
+      "E14",
+      "E11"
+    ]
+  },
+  {
+    "id": "alarm-disable",
+    "protocol": "amada-current",
+    "action": "set mechanical alarm",
+    "kind": "alarm",
+    "inputs": {
+      "hour": 23,
+      "minute": 5,
+      "repeat": 1,
+      "kind": 9,
+      "enabled": false,
+      "selector": 187
+    },
+    "expected_bytes": "07 05 01 09 17 05 00 00 bb",
+    "evidence": [
+      "E14",
+      "E11"
+    ]
+  },
+  {
+    "id": "clock-one",
+    "protocol": "amada-current",
+    "action": "clock calibration",
+    "kind": "clock",
+    "inputs": {
+      "month": 11,
+      "year_offset": 26,
+      "day": 27,
+      "weekday": 5,
+      "hour": 8,
+      "minute": 9,
+      "second": 10
+    },
+    "expected_bytes": "07 04 0b 1a 1b 05 08 09 0a",
+    "evidence": [
+      "E15",
+      "E11"
+    ]
+  },
+  {
+    "id": "clock-sunday",
+    "protocol": "amada-current",
+    "action": "clock calibration",
+    "kind": "clock",
+    "inputs": {
+      "month": 1,
+      "year_offset": 27,
+      "day": 3,
+      "weekday": 0,
+      "hour": 23,
+      "minute": 59,
+      "second": 58
+    },
+    "expected_bytes": "07 04 01 1b 03 00 17 3b 3a",
+    "evidence": [
+      "E15",
+      "E11"
+    ]
+  },
+  {
+    "id": "massage-parser-00",
+    "protocol": "amada-current",
+    "action": "parse massage/light",
+    "kind": "massage_parser",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "a5 0b 0e aa 00 00 01 02 04 00 bb 02 59 03 03 06 01",
+    "expected_state": {
+      "time": 2,
+      "head": 2,
+      "foot": 3,
+      "mode": 3,
+      "on": true,
+      "light": true
+    },
+    "evidence": [
+      "E12"
+    ],
+    "origin": "Synthetic payload using app parser offsets; not observed hardware bytes"
+  },
+  {
+    "id": "massage-parser-aa",
+    "protocol": "amada-current",
+    "action": "parse massage/light",
+    "kind": "massage_parser",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "a5 0b 0e aa 00 00 01 02 04 00 bb 02 59 03 03 06 01",
+    "expected_state": {
+      "time": 0,
+      "head": 0,
+      "foot": 0,
+      "mode": 0,
+      "on": false,
+      "light": false
+    },
+    "evidence": [
+      "E12"
+    ],
+    "origin": "Synthetic payload using app parser offsets; not observed hardware bytes"
+  },
+  {
+    "id": "alarm-parser-00",
+    "protocol": "amada-current",
+    "action": "parse alarm",
+    "kind": "alarm_parser",
+    "inputs": {
+      "selector": 0
+    },
+    "expected_bytes": "a5 0c 0e aa be 01 07 1e 00 00 bb 01 09 17 05 00 01",
+    "expected_state": {
+      "repeat": 1,
+      "kind": 9,
+      "hour": 23,
+      "minute": 5,
+      "enabled": true
+    },
+    "evidence": [
+      "E13"
+    ],
+    "origin": "Synthetic payload using app parser offsets; not observed hardware bytes"
+  },
+  {
+    "id": "alarm-parser-aa",
+    "protocol": "amada-current",
+    "action": "parse alarm",
+    "kind": "alarm_parser",
+    "inputs": {
+      "selector": 170
+    },
+    "expected_bytes": "a5 0c 0e aa be 01 07 1e 00 00 bb 01 09 17 05 00 01",
+    "expected_state": {
+      "repeat": 190,
+      "kind": 1,
+      "hour": 7,
+      "minute": 30,
+      "enabled": false
+    },
+    "evidence": [
+      "E13"
+    ],
+    "origin": "Synthetic payload using app parser offsets; not observed hardware bytes"
+  }
+]

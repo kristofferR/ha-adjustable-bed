@@ -648,6 +648,7 @@ BED_TYPE_RIZE_HOME: Final = "rize_home"
 BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
 BED_TYPE_OKIMATTMOTION: Final = "okimattmotion"
 BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
+BED_TYPE_AMADA: Final = "amada"
 BED_TYPE_N32_MOTION_BED: Final = "n32_motion_bed"
 BED_TYPE_SHUDA: Final = "shuda"
 # Explicit Richmat MH app profiles: one shared library, five catalogs.
@@ -976,6 +977,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIMATTMOTION,
     BED_TYPE_COMFORT_ENHANCEMENT3,
+    BED_TYPE_AMADA,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_SHUDA,
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -1169,6 +1171,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_OKIN_MOTIONBED,
         BED_TYPE_OKIMATTMOTION,
         BED_TYPE_COMFORT_ENHANCEMENT3,
+        BED_TYPE_AMADA,
         BED_TYPE_N32_MOTION_BED,
         BED_TYPE_SHUDA,
         BED_TYPE_ESHINE,
@@ -3150,6 +3153,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_RIZE_HOME: (3, 200),  # Rize Home fixed 200 ms refresh; bounded HA tap.
     BED_TYPE_OKIN_MOTIONBED: (5, 200),  # Fixed 200 ms app refresh, ~1 s HA tap.
     BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),
+    BED_TYPE_AMADA: (10, 100),
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
     BED_TYPE_SHUDA: (5, 200),
     BED_TYPE_LANGJUE: (2, langjue_profile.MOTOR_REFRESH_MS),  # HA tap at the app's refresh rate.
